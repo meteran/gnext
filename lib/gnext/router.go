@@ -22,18 +22,18 @@ type Router struct {
 }
 
 func (r *Router) GET(path string, handler interface{}) {
-	r.engine.GET(path, r.wrap(handler))
+	r.Handle(http.MethodGet, path, handler)
 }
 
 func (r *Router) POST(path string, handler interface{}) {
-	r.engine.POST(path, r.wrap(handler))
+	r.Handle(http.MethodPost, path, handler)
 }
 
 
-func (r *Router) wrap(handler interface{}) gin.HandlerFunc {
-	wrapper := WrapHandler(handler)
+func (r *Router) Handle(method string, path string, handler interface{}) {
+	wrapper := WrapHandler(method, path, handler)
 	r.docs.append(wrapper.docs)
-	return wrapper.rawHandle
+	r.engine.Handle(method, path, wrapper.rawHandle)
 }
 
 func (r *Router) Engine() http.Handler {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"gnext.io/gnext"
+	"net/http"
 
 	"log"
 )
@@ -11,16 +12,20 @@ type Response struct {
 	Name string `json:"name"`
 }
 type Request struct {
-	gnext.MarkBody
+	gnext.Body
 	Name string `json:"name"`
 }
 
 type Query struct {
-	gnext.MarkQuery
-	Limit  int
-	Offset int
-	Order  string
+	gnext.Query
+	Limit  int    `form:"limit"`
+	Offset int    `form:"offset"`
+	Order  string `form:"order"`
 }
+
+type QueryM map[string]struct{}
+
+func (m QueryM) QueryDocs() {}
 
 type ErrorResult struct {
 	Message string `json:"message"`
@@ -33,30 +38,28 @@ func (e *ErrorResult) StatusCodes() []int {
 type User struct {
 }
 
-func someHandler(param1 int, param2 string, body *Request, query *Query) (*Response, *ErrorResult) {
-	log.Println(param1, param2, body, query)
-	return nil, nil
+func someHandler(param1 int, param2 string, body *Request, query *Query, headers gnext.Headers) (*Response, *ErrorResult) {
+	log.Println(param1, param2, body, query, headers)
+	return &Response{
+		Id:   123,
+		Name: "hello world",
+	}, nil
 }
 
 func main() {
 	router := gnext.New()
 
-	q := &Query{}
-	func(a interface{}) {
-		b, ok := a.(gnext.QueryInterface)
-		println(b, ok)
-	}(q)
-
-	router.GET("/asd/", someHandler)
+	router.GET("/asd/:id/:id2/asd", someHandler)
+	router.POST("/asd/:id/:id2/asd", someHandler)
 	//router.POST("/asd/", someHandler)
 	//
-	//srv := &http.Server{
-	//	Addr:    "0.0.0.0:8000",
-	//	Handler: router.Engine(),
-	//}
-	//
-	//log.Println("starting server")
-	//if err := srv.ListenAndServe(); err != nil {
-	//	log.Fatalf("listen: %s\n", err)
-	//}
+	srv := &http.Server{
+		Addr:    "0.0.0.0:8000",
+		Handler: router.Engine(),
+	}
+
+	log.Println("starting server")
+	if err := srv.ListenAndServe(); err != nil {
+		log.Fatalf("listen: %s\n", err)
+	}
 }

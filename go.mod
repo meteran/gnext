@@ -1,4 +1,4 @@
-module gnext
+module ginext
 
 go 1.16
 
