@@ -23,19 +23,12 @@ type Query struct {
 	Order  string `form:"order"`
 }
 
-type QueryM map[string]struct{}
-
-func (m QueryM) QueryDocs() {}
-
 type ErrorResult struct {
 	Message string `json:"message"`
 }
 
 func (e *ErrorResult) StatusCodes() []int {
 	return []int{409, 422}
-}
-
-type User struct {
 }
 
 func someHandler(param1 int, param2 string, body *Request, query *Query, headers gnext.Headers) (*Response, *ErrorResult) {
@@ -48,6 +41,10 @@ func someHandler(param1 int, param2 string, body *Request, query *Query, headers
 
 func main() {
 	router := gnext.New()
+
+	router.Use(NewMiddleware(MiddlewareOptions{
+		startValue: 10,
+	}))
 
 	router.GET("/asd/:id/:id2/asd", someHandler)
 	router.POST("/asd/:id/:id2/asd", someHandler)

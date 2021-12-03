@@ -40,3 +40,7 @@ func (r *Router) Engine() http.Handler {
 	return r.engine
 }
 
+func (r *Router) Use(middlewareFactory MiddlewareFactory) {
+
+}
+

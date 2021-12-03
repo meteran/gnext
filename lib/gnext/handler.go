@@ -145,7 +145,6 @@ func (w *HandlerWrapper) rawHandle(ctx *gin.Context) {
 			fmt.Printf("error parsing request: %v\n", err)
 			panic("unhandled errors for now")
 		}
-		println(value.Type().String())
 		values[i] = value
 	}
 
