@@ -8,6 +8,7 @@ import (
 )
 
 type Response struct {
+	gnext.Response
 	Id   int    `json:"id"`
 	Name string `json:"name"`
 }
