@@ -41,24 +41,6 @@ func (p *pathParameters) index(index int) string {
 	return paramName[1 : len(paramName)-1]
 }
 
-type argSetter func([]reflect.Value, []*reflect.Value)
-
-type HandlerCaller struct {
-	argBuilders []builder
-	argSetters  []argSetter
-	receiver    reflect.Value
-}
-
-func (c *HandlerCaller) addSetter(outputIndex, contextIndex int) {
-	setter := func(output []reflect.Value, context []*reflect.Value) {
-		context[contextIndex] = &output[outputIndex]
-	}
-	c.argSetters = append(c.argSetters, setter)
-}
-
-func (c *HandlerCaller) addBuilder(b builder) {
-	c.argBuilders = append(c.argBuilders, b)
-}
 
 func (c *HandlerCaller) Call(contextValues []*reflect.Value, ctx *gin.Context) *Error {
 	values := make([]reflect.Value, len(c.argBuilders))
@@ -81,6 +63,7 @@ type HandlerWrapper struct {
 	originalHandler interface{}
 	handlersChain   []*HandlerCaller
 	pathParams      []reflect.Value
+	argumentTypes   []*reflect.Type
 	queryType       *reflect.Type
 	bodyType        *reflect.Type
 	docs            interface{}
@@ -102,6 +85,14 @@ func (w *HandlerWrapper) init() {
 		}
 	}
 
+	w.chainHandler(w.originalHandler)
+
+	for i := len(w.middlewares) - 1; i >= 0; i-- {
+		middleware := w.middlewares[i]
+		if middleware.After != nil {
+			w.chainHandler(middleware.After)
+		}
+	}
 }
 
 func (w *HandlerWrapper) chainHandler(handler interface{}) {
@@ -126,20 +117,20 @@ func (w *HandlerWrapper) chainHandler(handler interface{}) {
 
 		switch inParam.Kind() {
 		case reflect.Int, reflect.String:
-			w.addBuilder(paramBuilder(inParam.Kind(), w.params.index(paramIndex), optional))
+			caller.addBuilder(paramBuilder(inParam.Kind(), w.params.index(paramIndex), optional))
 			paramIndex++
 		case reflect.Struct, reflect.Map, reflect.Array, reflect.Slice:
-			w.appendGeneric(inParam, optional)
+			w.addGenericBuilder(inParam, optional)
 		case reflect.Ptr:
-			panic("can not use double pointer as parameter: " + ht.In(i).String())
+			panic("can not use double pointer as an argument: " + ht.In(i).String())
 		default:
-			panic("unknown parameter")
+			panic("unknown parameter kind")
 		}
 	}
 	w.handlersChain = append(w.handlersChain, caller)
 }
 
-func (w *HandlerWrapper) appendGeneric(inParam reflect.Type, optional bool) {
+func (w *HandlerWrapper) addGenericBuilder(inParam reflect.Type, optional bool) {
 	var paramType string
 	switch {
 	case inParam.Implements(bodyType):
