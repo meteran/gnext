@@ -1,29 +1,27 @@
 package gnext
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"io"
 	"reflect"
 	"strconv"
 )
 
-
-// TODO potential optimization: return a pointer to `reflect.value` instead of direct struct
-type argBuilder func(ctx *gin.Context, contextValues []*reflect.Value) (reflect.Value, error)
+// TODO potential optimization: return a pointer to `reflect.value` instead of struct directly
+type argBuilder func(ctx *callContext) (reflect.Value, error)
 
 func stringParamBuilder(paramName string, optional bool) argBuilder {
 	if optional {
-		return func(ctx *gin.Context, _ []*reflect.Value) (reflect.Value, error) {
-			param := ctx.Param(paramName)
+		return func(ctx *callContext) (reflect.Value, error) {
+			param := ctx.rawContext.Param(paramName)
 			if param == "" {
 				return reflect.ValueOf((*string)(nil)), nil
 			}
 			return reflect.ValueOf(&param), nil
 		}
 	} else {
-		return func(ctx *gin.Context, _ []*reflect.Value) (reflect.Value, error) {
-			param := ctx.Param(paramName)
+		return func(ctx *callContext) (reflect.Value, error) {
+			param := ctx.rawContext.Param(paramName)
 			if param == "" {
 				return reflect.Value{}, NotFound
 			}
@@ -34,16 +32,16 @@ func stringParamBuilder(paramName string, optional bool) argBuilder {
 
 func intParamBuilder(paramName string, optional bool) argBuilder {
 	if optional {
-		return func(ctx *gin.Context, _ []*reflect.Value) (reflect.Value, error) {
-			number, err := strconv.Atoi(ctx.Param(paramName))
+		return func(ctx *callContext) (reflect.Value, error) {
+			number, err := strconv.Atoi(ctx.rawContext.Param(paramName))
 			if err != nil {
 				return reflect.ValueOf((*int)(nil)), nil
 			}
 			return reflect.ValueOf(&number), nil
 		}
 	} else {
-		return func(ctx *gin.Context, _ []*reflect.Value) (reflect.Value, error) {
-			number, err := strconv.Atoi(ctx.Param(paramName))
+		return func(ctx *callContext) (reflect.Value, error) {
+			number, err := strconv.Atoi(ctx.rawContext.Param(paramName))
 			if err != nil {
 				return reflect.Value{}, NotFound
 			}
@@ -63,9 +61,9 @@ func paramBuilder(kind reflect.Kind, paramName string, optional bool) argBuilder
 	}
 }
 
-func headerBuilder(optional bool) argBuilder {
-	return func(ctx *gin.Context, _ []*reflect.Value) (reflect.Value, error) {
-		h := Headers(ctx.Request.Header)
+func headersBuilder(optional bool) argBuilder {
+	return func(ctx *callContext) (reflect.Value, error) {
+		h := Headers(ctx.rawContext.Request.Header)
 		if optional {
 			return reflect.ValueOf(&h), nil
 		}
@@ -73,34 +71,44 @@ func headerBuilder(optional bool) argBuilder {
 	}
 }
 
-func genericBuilder(bodyType reflect.Type, bindType binding.Binding, optional bool) argBuilder {
-	return func(ctx *gin.Context, _ []*reflect.Value) (reflect.Value, error) {
-		value := reflect.New(bodyType)
+func genericBuilder(bodyType reflect.Type, bindType binding.Binding) argBuilder {
+	if bodyType.Kind() == reflect.Ptr {
+		bodyType = bodyType.Elem()
+		return func(ctx *callContext) (reflect.Value, error) {
+			value := reflect.New(bodyType)
 
-		if err := ctx.ShouldBindWith(value.Interface(), bindType); err != nil {
-			if err == io.EOF && optional {
-				return reflect.New(value.Type()).Elem(), nil
+			if err := ctx.rawContext.ShouldBindWith(value.Interface(), bindType); err != nil {
+				if err == io.EOF {
+					return reflect.New(value.Type()).Elem(), nil
+				}
+				return reflect.Value{}, err
 			}
-			return reflect.Value{}, err
-		}
 
-		if optional {
 			return value, nil
 		}
-		return value.Elem(), nil
+	} else {
+		return func(ctx *callContext) (reflect.Value, error) {
+			value := reflect.New(bodyType)
+
+			if err := ctx.rawContext.ShouldBindWith(value.Interface(), bindType); err != nil {
+				return reflect.Value{}, err
+			}
+
+			return value.Elem(), nil
+		}
 	}
 }
 
 func cached(builder argBuilder, cacheIndex int) argBuilder {
-	return func(ctx *gin.Context, contextValues []*reflect.Value) (reflect.Value, error) {
-		value, err := builder(ctx, contextValues)
-		contextValues[cacheIndex] = &value
+	return func(ctx *callContext) (reflect.Value, error) {
+		value, err := builder(ctx)
+		ctx.values[cacheIndex] = &value
 		return value, err
 	}
 }
 
 func cachedValue(cacheIndex int) argBuilder {
-	return func(ctx *gin.Context, contextValues []*reflect.Value) (reflect.Value, error) {
-		return *contextValues[cacheIndex], nil
+	return func(ctx *callContext) (reflect.Value, error) {
+		return *ctx.values[cacheIndex], nil
 	}
 }

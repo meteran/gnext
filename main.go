@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"gnext.io/gnext"
 	"net/http"
+	"reflect"
 
 	"log"
 )
@@ -40,7 +42,22 @@ func someHandler(param1 int, param2 string, body *Request, query *Query, headers
 	}, nil
 }
 
+type Error struct {
+	error
+}
+
+func f(b string) Error {
+	fmt.Printf("\n%v\n", b)
+	return Error{}
+}
+
 func main() {
+	var a *string
+	r := reflect.ValueOf(a)
+	fmt.Printf("%v", r)
+	fmt.Printf("%v", r.Elem())
+	fmt.Printf("\n\n%v\n\n", reflect.TypeOf(f).Out(0).Implements(reflect.TypeOf((*error)(nil)).Elem()))
+
 	router := gnext.New()
 
 	router.Use(NewMiddleware(MiddlewareOptions{

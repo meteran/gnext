@@ -41,29 +41,12 @@ func (p *pathParameters) index(index int) string {
 	return paramName[1 : len(paramName)-1]
 }
 
-
-func (c *HandlerCaller) Call(contextValues []*reflect.Value, ctx *gin.Context) *Error {
-	values := make([]reflect.Value, len(c.argBuilders))
-	for i, builder := range c.argBuilders {
-		value, err := builder(ctx, contextValues)
-		if err != nil {
-			return &Error{}
-		}
-		values[i] = value
-	}
-
-	result := c.receiver.Call(values)
-	for _, setter := range c.argSetters {
-		setter(result, contextValues)
-	}
-	return nil
-}
-
 type HandlerWrapper struct {
 	originalHandler interface{}
 	handlersChain   []*HandlerCaller
 	pathParams      []reflect.Value
-	argumentTypes   []*reflect.Type
+	valueNum        int
+	valueTypes      map[reflect.Type]int
 	queryType       *reflect.Type
 	bodyType        *reflect.Type
 	docs            interface{}
@@ -71,9 +54,7 @@ type HandlerWrapper struct {
 	path            string
 	middlewares     []Middleware
 	params          pathParameters
-	responseIndex   int
 	errorIndex      int
-	valuesNum       int
 }
 
 func (w *HandlerWrapper) init() {
@@ -96,96 +77,140 @@ func (w *HandlerWrapper) init() {
 }
 
 func (w *HandlerWrapper) chainHandler(handler interface{}) {
-	caller := &HandlerCaller{
-		receiver: reflect.ValueOf(handler),
-	}
+	caller := NewHandlerCaller(reflect.ValueOf(handler))
 
 	ht := reflect.TypeOf(handler)
 	if ht.Kind() != reflect.Func {
 		panic("handler is not a function")
 	}
 
+	w.routeInParams(ht, caller)
+	w.routeOutParams(ht, caller)
+
+	w.handlersChain = append(w.handlersChain, caller)
+}
+
+func (w *HandlerWrapper) routeInParams(ht reflect.Type, caller *HandlerCaller) {
 	paramIndex := 0
 	for i := 0; i < ht.NumIn(); i++ {
 		inParam := ht.In(i)
 
-		optional := false
-		if inParam.Kind() == reflect.Ptr {
-			optional = true
-			inParam = inParam.Elem()
+		if w.isPathParam(inParam) {
+			w.addPathParamBuilder(caller, inParam, paramIndex)
+			paramIndex++
 		}
 
-		switch inParam.Kind() {
+		if index, exists := w.valueTypes[inParam]; exists {
+			caller.addBuilder(cachedValue(index))
+			continue
+		}
+
+		w.valueTypes[inParam] = w.valueNum
+		w.valueNum++
+
+		switch {
+		case inParam.Implements(bodyType):
+			w.setBodyType(inParam)
+			w.addGenericBuilder(caller, inParam, binding.JSON)
+		case inParam.Implements(queryType):
+			w.setQueryType(inParam)
+			w.addGenericBuilder(caller, inParam, binding.Query)
+		case inParam.Implements(headersType):
+			caller.addBuilder(headersBuilder(inParam.Kind() == reflect.Ptr))
+			return
+		default:
+			switch w.method {
+			case http.MethodGet, http.MethodDelete, http.MethodHead, http.MethodOptions:
+				w.setQueryType(inParam)
+				w.addGenericBuilder(caller, inParam, binding.Query)
+			case http.MethodPost, http.MethodPatch, http.MethodPut:
+				w.setBodyType(inParam)
+				w.addGenericBuilder(caller, inParam, binding.JSON)
+			default:
+				panic("unknown parameter purpose; neither body nor query")
+			}
+		}
+	}
+}
+
+func (w *HandlerWrapper) routeOutParams(ht reflect.Type, caller *HandlerCaller) {
+	paramIndex := 0
+	for i := 0; i < ht.NumOut(); i++ {
+		outParam := ht.Out(i)
+
+		optional := false
+		if outParam.Kind() == reflect.Ptr {
+			optional = true
+			outParam = outParam.Elem()
+		}
+
+		switch outParam.Kind() {
 		case reflect.Int, reflect.String:
-			caller.addBuilder(paramBuilder(inParam.Kind(), w.params.index(paramIndex), optional))
+			caller.addBuilder(paramBuilder(outParam.Kind(), w.params.index(paramIndex), optional))
 			paramIndex++
 		case reflect.Struct, reflect.Map, reflect.Array, reflect.Slice:
-			w.addGenericBuilder(inParam, optional)
+			w.addGenericBuilder(caller, outParam, optional)
 		case reflect.Ptr:
 			panic("can not use double pointer as an argument: " + ht.In(i).String())
 		default:
 			panic("unknown parameter kind")
 		}
 	}
-	w.handlersChain = append(w.handlersChain, caller)
-}
-
-func (w *HandlerWrapper) addGenericBuilder(inParam reflect.Type, optional bool) {
-	var paramType string
-	switch {
-	case inParam.Implements(bodyType):
-		paramType = BodyParam
-	case inParam.Implements(queryType):
-		paramType = QueryParam
-	case inParam == headersType:
-		w.addBuilder(headerBuilder(optional))
-		return
-	default:
-		switch w.method {
-		case http.MethodGet, http.MethodDelete, http.MethodHead, http.MethodOptions:
-			paramType = QueryParam
-		case http.MethodPost, http.MethodPatch, http.MethodPut:
-			paramType = BodyParam
-		default:
-			panic("unknown parameter purpose; neither body nor query")
-		}
-	}
-
-	var format binding.Binding
-	switch paramType {
-	case BodyParam:
-		if w.bodyType != nil {
-			panic(fmt.Sprintf("ambiguous body parameter: %s and %s", (*w.bodyType).Name(), inParam.Name()))
-		}
-		w.bodyType = &inParam
-		format = binding.JSON
-	case QueryParam:
-		if w.queryType != nil {
-			panic(fmt.Sprintf("ambiguous query parameter: %s and %s", (*w.queryType).Name(), inParam.Name()))
-		}
-		w.queryType = &inParam
-		format = binding.Query
-	}
-
-	w.addBuilder(genericBuilder(inParam, format, optional))
 }
 
 func (w *HandlerWrapper) rawHandle(ctx *gin.Context) {
-	contextValues := make([]*reflect.Value, w.valuesNum)
+	context := &callContext{
+		rawContext: ctx,
+		values:     make([]*reflect.Value, w.valueNum),
+	}
 
 	for _, caller := range w.handlersChain {
-		err := caller.Call(contextValues, ctx)
+		err := caller.call(context)
 		if err != nil {
-			fmt.Printf("error parsing request: %v\n", err)
-			panic("unhandled errors for now")
+			break
 		}
 	}
 
-	response := contextValues[w.responseIndex]
-	err := contextValues[w.errorIndex]
-	if !err.IsNil() {
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err.Interface())
+	response := context.response
+	if context.error != nil {
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, context.error)
 		return
 	}
+
 	ctx.JSON(200, response.Interface())
+}
+
+func (w *HandlerWrapper) setBodyType(argType reflect.Type) {
+	if w.bodyType != nil {
+		panic(fmt.Sprintf("ambiguous body parameter: %s and %s", (*w.bodyType).Name(), argType.Name()))
+	}
+	w.bodyType = &argType
+}
+
+func (w *HandlerWrapper) setQueryType(argType reflect.Type) argBuilder {
+	if w.queryType != nil {
+		panic(fmt.Sprintf("ambiguous query parameter: %s and %s", (*w.queryType).Name(), argType.Name()))
+	}
+	w.queryType = &argType
+	return genericBuilder(argType, binding.Query)
+}
+
+func (w *HandlerWrapper) isPathParam(argType reflect.Type) bool {
+	if argType.Kind() == reflect.Ptr {
+		argType = argType.Elem()
+	}
+	return argType == intType || argType == stringType
+}
+
+func (w *HandlerWrapper) addPathParamBuilder(caller *HandlerCaller, argType reflect.Type, paramIndex int) {
+	optional := false
+	if argType.Kind() == reflect.Ptr {
+		optional = true
+		argType = argType.Elem()
+	}
+	caller.addBuilder(paramBuilder(argType.Kind(), w.params.index(paramIndex), optional))
+}
+
+func (w *HandlerWrapper) addGenericBuilder(caller *HandlerCaller, argType reflect.Type, bindType binding.Binding) {
+	caller.addBuilder(cached(genericBuilder(argType, bindType), w.valueNum))
 }
