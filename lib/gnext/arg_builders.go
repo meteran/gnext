@@ -61,16 +61,6 @@ func paramBuilder(kind reflect.Kind, paramName string, optional bool) argBuilder
 	}
 }
 
-func headersBuilder(optional bool) argBuilder {
-	return func(ctx *callContext) (reflect.Value, error) {
-		h := Headers(ctx.rawContext.Request.Header)
-		if optional {
-			return reflect.ValueOf(&h), nil
-		}
-		return reflect.ValueOf(h), nil
-	}
-}
-
 func genericBuilder(bodyType reflect.Type, bindType binding.Binding) argBuilder {
 	if bodyType.Kind() == reflect.Ptr {
 		bodyType = bodyType.Elem()

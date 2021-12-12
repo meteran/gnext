@@ -24,3 +24,26 @@ func errorSetter(optional bool) argSetter {
 		}
 	}
 }
+
+func headersSetter(optional bool) argSetter {
+	if optional {
+		return func(value *reflect.Value, ctx *callContext) {
+			headers := value.Interface().(*Headers)
+			if headers != nil {
+				for key, values := range *headers {
+					for _, val := range values {
+						ctx.rawContext.Header(key, val)
+					}
+				}
+			}
+		}
+	} else {
+		return func(value *reflect.Value, ctx *callContext) {
+			for key, values := range value.Interface().(Headers) {
+				for _, val := range values {
+					ctx.rawContext.Header(key, val)
+				}
+			}
+		}
+	}
+}

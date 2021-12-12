@@ -40,6 +40,6 @@ func (r *Router) Engine() http.Handler {
 	return r.engine
 }
 
-func (r *Router) Use(middlewareFactory Middleware) {
-	r.middlewares = append(r.middlewares, middlewareFactory)
+func (r *Router) Use(middleware Middleware) {
+	r.middlewares = append(r.middlewares, middleware)
 }
