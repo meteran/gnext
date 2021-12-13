@@ -5,6 +5,8 @@ import (
 	"reflect"
 )
 
+type Status int
+
 type HeadersInterface interface {
 	HeadersDocs()
 }
@@ -48,6 +50,7 @@ var (
 	headersInterfaceType  = reflect.TypeOf((*HeadersInterface)(nil)).Elem()
 
 	headersType = reflect.TypeOf(Headers{})
+	statusType  = reflect.TypeOf(Status(0))
 	stringType  = reflect.TypeOf("")
 	intType     = reflect.TypeOf(0)
 )

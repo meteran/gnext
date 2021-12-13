@@ -47,3 +47,18 @@ func headersSetter(optional bool) argSetter {
 		}
 	}
 }
+
+func statusSetter(optional bool) argSetter {
+	if optional {
+		return func(value *reflect.Value, ctx *callContext) {
+			statusPtr := value.Interface().(*Status)
+			if statusPtr != nil {
+				ctx.status = int(*statusPtr)
+			}
+		}
+	} else {
+		return func(value *reflect.Value, ctx *callContext) {
+			ctx.status = int(value.Interface().(Status))
+		}
+	}
+}

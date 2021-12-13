@@ -19,6 +19,7 @@ func WrapHandler(method string, path string, middlewares []Middleware, handler i
 		originalHandler: handler,
 		params:          newParameters(path),
 		valuesTypes:     map[reflect.Type]int{},
+		defaultStatus:   200,
 	}
 	wrapper.init()
 	return wrapper
@@ -48,14 +49,16 @@ type HandlerWrapper struct {
 	pathParams      []reflect.Value
 	valuesNum       int
 	valuesTypes     map[reflect.Type]int
-	queryType       *reflect.Type
-	bodyType        *reflect.Type
-	responseType    *reflect.Type
+	queryType       reflect.Type
+	bodyType        reflect.Type
+	responseType    reflect.Type
 	docs            interface{}
 	method          string
 	path            string
 	middlewares     []Middleware
 	params          pathParameters
+	responseIndex   int
+	defaultStatus   int
 }
 
 func (w *HandlerWrapper) init() {
@@ -63,21 +66,21 @@ func (w *HandlerWrapper) init() {
 
 	for _, middleware := range w.middlewares {
 		if middleware.Before != nil {
-			w.chainHandler(middleware.Before)
+			w.chainHandler(middleware.Before, false)
 		}
 	}
 
-	w.chainHandler(w.originalHandler)
+	w.chainHandler(w.originalHandler, true)
 
 	for i := len(w.middlewares) - 1; i >= 0; i-- {
 		middleware := w.middlewares[i]
 		if middleware.After != nil {
-			w.chainHandler(middleware.After)
+			w.chainHandler(middleware.After, false)
 		}
 	}
 }
 
-func (w *HandlerWrapper) chainHandler(handler interface{}) {
+func (w *HandlerWrapper) chainHandler(handler interface{}, final bool) {
 	caller := NewHandlerCaller(reflect.ValueOf(handler))
 
 	ht := reflect.TypeOf(handler)
@@ -86,7 +89,7 @@ func (w *HandlerWrapper) chainHandler(handler interface{}) {
 	}
 
 	w.inspectInParams(ht, caller)
-	w.inspectOutParams(ht, caller)
+	w.inspectOutParams(ht, caller, final)
 
 	w.handlersChain = append(w.handlersChain, caller)
 }
@@ -106,7 +109,7 @@ func (w *HandlerWrapper) inspectInParams(handlerType reflect.Type, caller *Handl
 			caller.addBuilder(cachedValue(index))
 			continue
 		}
-		
+
 		switch {
 		case arg.Implements(bodyInterfaceType):
 			w.setBodyType(arg)
@@ -134,27 +137,34 @@ func (w *HandlerWrapper) inspectInParams(handlerType reflect.Type, caller *Handl
 	}
 }
 
-func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller *HandlerCaller) {
+func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller *HandlerCaller, final bool) {
 	for i := 0; i < handlerType.NumOut(); i++ {
 		arg := handlerType.Out(i)
+
+		// response parameters that shouldn't be in cache
+		switch {
+		case typesEqual(headersType, arg):
+			caller.addSetter(headersSetter(arg.Kind() == reflect.Ptr))
+			continue
+		case typesEqual(statusType, arg):
+			caller.addSetter(statusSetter(arg.Kind() == reflect.Ptr))
+			continue
+		}
 
 		if index, exists := w.valuesTypes[arg]; exists {
 			caller.addSetter(valueSetter(index))
 			continue
 		}
 
-
 		switch {
-		case arg.Implements(responseInterfaceType):
-			w.setResponseType(arg)
-			caller.addSetter(valueSetter(w.valuesNum))
 		case arg.Implements(errorInterfaceType):
 			caller.addSetter(errorSetter(arg.Kind() == reflect.Ptr))
-		case arg == headersType || (arg.Kind() == reflect.Ptr && arg.Elem() == headersType):
-			caller.addSetter(headersSetter(arg.Kind() == reflect.Ptr))
-			// Do not cache response headers
-			continue
-		case 
+		// final means, that it's the original handler
+		// in such case we consider any unknown returned object as a response
+		// just for developer convenience
+		case arg.Implements(responseInterfaceType) || final:
+			w.setResponseType(arg)
+			caller.addSetter(valueSetter(w.valuesNum))
 		default:
 			caller.addSetter(valueSetter(w.valuesNum))
 		}
@@ -164,47 +174,26 @@ func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller *Hand
 	}
 }
 
-func (w *HandlerWrapper) rawHandle(ctx *gin.Context) {
-	context := &callContext{
-		rawContext: ctx,
-		values:     make([]*reflect.Value, w.valuesNum),
-	}
-
-	for _, caller := range w.handlersChain {
-		err := caller.call(context)
-		if err != nil {
-			break
-		}
-	}
-
-	response := context.response
-	if context.error != nil {
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, context.error)
-		return
-	}
-
-	ctx.JSON(200, response.Interface())
-}
-
 func (w *HandlerWrapper) setBodyType(argType reflect.Type) {
 	if w.bodyType != nil {
-		panic(fmt.Sprintf("ambiguous body type: %s and %s", *w.bodyType, argType))
+		panic(fmt.Sprintf("ambiguous body type: %s and %s", w.bodyType, argType))
 	}
-	w.bodyType = &argType
+	w.bodyType = argType
 }
 
 func (w *HandlerWrapper) setQueryType(argType reflect.Type) {
 	if w.queryType != nil {
-		panic(fmt.Sprintf("ambiguous query type: %s and %s", *w.queryType, argType))
+		panic(fmt.Sprintf("ambiguous query type: %s and %s", w.queryType, argType))
 	}
-	w.queryType = &argType
+	w.queryType = argType
 }
 
 func (w *HandlerWrapper) setResponseType(argType reflect.Type) {
 	if w.responseType != nil {
-		panic(fmt.Sprintf("ambiguous response type: %s and %s", *w.responseType, argType))
+		panic(fmt.Sprintf("ambiguous response type: %s and %s", w.responseType, argType))
 	}
-	w.responseType = &argType
+	w.responseType = argType
+	w.responseIndex = w.valuesNum
 }
 
 func (w *HandlerWrapper) isPathParam(argType reflect.Type) bool {
@@ -225,4 +214,31 @@ func (w *HandlerWrapper) addPathParamBuilder(caller *HandlerCaller, argType refl
 
 func (w *HandlerWrapper) addGenericBuilder(caller *HandlerCaller, argType reflect.Type, bindType binding.Binding) {
 	caller.addBuilder(cached(genericBuilder(argType, bindType), w.valuesNum))
+}
+
+func (w *HandlerWrapper) rawHandle(rawContext *gin.Context) {
+	context := &callContext{
+		rawContext: rawContext,
+		values:     make([]*reflect.Value, w.valuesNum),
+		status:     w.defaultStatus,
+	}
+
+	for _, caller := range w.handlersChain {
+		err := caller.call(context)
+		if err != nil {
+			break
+		}
+	}
+
+	response := context.values[w.responseIndex]
+	if context.error != nil {
+		rawContext.AbortWithStatusJSON(http.StatusInternalServerError, context.error)
+		return
+	}
+
+	if response == nil {
+		rawContext.AbortWithStatus(context.status)
+		return
+	}
+	rawContext.JSON(context.status, response.Interface())
 }
