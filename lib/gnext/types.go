@@ -1,6 +1,7 @@
 package gnext
 
 import (
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"reflect"
 )
@@ -49,10 +50,11 @@ var (
 	responseInterfaceType = reflect.TypeOf((*ResponseInterface)(nil)).Elem()
 	headersInterfaceType  = reflect.TypeOf((*HeadersInterface)(nil)).Elem()
 
-	headersType = reflect.TypeOf(Headers{})
-	statusType  = reflect.TypeOf(Status(0))
-	stringType  = reflect.TypeOf("")
-	intType     = reflect.TypeOf(0)
+	rawContextType = reflect.TypeOf(&gin.Context{})
+	headersType    = reflect.TypeOf(Headers{})
+	statusType     = reflect.TypeOf(Status(0))
+	stringType     = reflect.TypeOf("")
+	intType        = reflect.TypeOf(0)
 )
 
 type Middleware struct {

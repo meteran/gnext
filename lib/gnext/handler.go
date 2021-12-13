@@ -111,6 +111,8 @@ func (w *HandlerWrapper) inspectInParams(handlerType reflect.Type, caller *Handl
 		}
 
 		switch {
+		case arg == rawContextType:
+			caller.addBuilder(cached(rawContextBuilder, w.valuesNum))
 		case arg.Implements(bodyInterfaceType):
 			w.setBodyType(arg)
 			w.addGenericBuilder(caller, arg, binding.JSON)
@@ -149,6 +151,9 @@ func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller *Hand
 		case typesEqual(statusType, arg):
 			caller.addSetter(statusSetter(arg.Kind() == reflect.Ptr))
 			continue
+		case arg.Implements(errorInterfaceType):
+			caller.addSetter(errorSetter)
+			continue
 		}
 
 		if index, exists := w.valuesTypes[arg]; exists {
@@ -157,8 +162,6 @@ func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller *Hand
 		}
 
 		switch {
-		case arg.Implements(errorInterfaceType):
-			caller.addSetter(errorSetter(arg.Kind() == reflect.Ptr))
 		// final means, that it's the original handler
 		// in such case we consider any unknown returned object as a response
 		// just for developer convenience

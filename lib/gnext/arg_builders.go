@@ -89,6 +89,10 @@ func genericBuilder(bodyType reflect.Type, bindType binding.Binding) argBuilder 
 	}
 }
 
+func rawContextBuilder(ctx *callContext) (reflect.Value, error) {
+	return reflect.ValueOf(ctx.rawContext), nil
+}
+
 func cached(builder argBuilder, cacheIndex int) argBuilder {
 	return func(ctx *callContext) (reflect.Value, error) {
 		value, err := builder(ctx)

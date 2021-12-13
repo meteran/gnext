@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"gnext.io/gnext"
 	"time"
 )
@@ -23,9 +24,10 @@ func NewMiddleware(options MiddlewareOptions) gnext.Middleware {
 			context.start = time.Now()
 			return context
 		},
-		After: func(context *SomeMiddleware) {
+		After: func(context *SomeMiddleware, resp *Response) {
 			context.count++
-			println(time.Now().Sub(context.start))
+			fmt.Println(resp)
+			fmt.Printf("%s\n", time.Now().Sub(context.start))
 		},
 	}
 }

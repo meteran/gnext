@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gin-gonic/gin"
 	"gnext.io/gnext"
 	"log"
 	"net/http"
@@ -31,8 +32,8 @@ func (e *ErrorResult) StatusCodes() []int {
 	return []int{409, 422}
 }
 
-func someHandler(param1 int, param2 string, body *Request, query *Query, headers *gnext.Headers) (*Response, *ErrorResult) {
-	log.Println(param1, param2, body, query, headers)
+func someHandler(param1 int, param2 string, body *Request, query *Query, headers *gnext.Headers, ctx *gin.Context) (*Response, error) {
+	log.Println(param1, param2, body, query, headers, ctx.Request.Method)
 	return &Response{
 		Id:   123,
 		Name: "hello world",

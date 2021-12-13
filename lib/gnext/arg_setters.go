@@ -10,19 +10,8 @@ func valueSetter(contextIndex int) argSetter {
 	}
 }
 
-func errorSetter(optional bool) argSetter {
-	if optional {
-		return func(value *reflect.Value, ctx *callContext) {
-			err := value.Interface().(*error)
-			if err != nil {
-				ctx.error = *err
-			}
-		}
-	} else {
-		return func(value *reflect.Value, ctx *callContext) {
-			ctx.error = value.Interface().(error)
-		}
-	}
+func errorSetter(value *reflect.Value, ctx *callContext) {
+	ctx.error, _ = value.Interface().(error)
 }
 
 func headersSetter(optional bool) argSetter {
