@@ -9,5 +9,5 @@ type callContext struct {
 	rawContext *gin.Context
 	values     []*reflect.Value
 	error      error
-	status     int
+	status     Status
 }

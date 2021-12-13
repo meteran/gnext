@@ -32,12 +32,12 @@ func (e *ErrorResult) StatusCodes() []int {
 	return []int{409, 422}
 }
 
-func someHandler(param1 int, param2 string, body *Request, query *Query, headers *gnext.Headers, ctx *gin.Context) (*Response, error) {
-	log.Println(param1, param2, body, query, headers, ctx.Request.Method)
-	return &Response{
+func someHandler(param1 int, param2 string, body *Request, query *Query, headers *gnext.Headers, ctx *gin.Context, context *SomeMiddleware) (gnext.Status, *Response) {
+	log.Println(param1, param2, body, query, headers, ctx.Request.Method, context)
+	return 201, &Response{
 		Id:   123,
 		Name: "hello world",
-	}, nil
+	}
 }
 
 func main() {

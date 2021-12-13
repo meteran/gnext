@@ -42,12 +42,12 @@ func statusSetter(optional bool) argSetter {
 		return func(value *reflect.Value, ctx *callContext) {
 			statusPtr := value.Interface().(*Status)
 			if statusPtr != nil {
-				ctx.status = int(*statusPtr)
+				ctx.status = *statusPtr
 			}
 		}
 	} else {
 		return func(value *reflect.Value, ctx *callContext) {
-			ctx.status = int(value.Interface().(Status))
+			ctx.status = value.Interface().(Status)
 		}
 	}
 }

@@ -58,7 +58,7 @@ type HandlerWrapper struct {
 	middlewares     []Middleware
 	params          pathParameters
 	responseIndex   int
-	defaultStatus   int
+	defaultStatus   Status
 }
 
 func (w *HandlerWrapper) init() {
@@ -113,6 +113,8 @@ func (w *HandlerWrapper) inspectInParams(handlerType reflect.Type, caller *Handl
 		switch {
 		case arg == rawContextType:
 			caller.addBuilder(cached(rawContextBuilder, w.valuesNum))
+		case typesEqual(statusType, arg):
+			caller.addBuilder(statusBuilder(arg.Kind() == reflect.Ptr))
 		case arg.Implements(bodyInterfaceType):
 			w.setBodyType(arg)
 			w.addGenericBuilder(caller, arg, binding.JSON)
@@ -240,8 +242,8 @@ func (w *HandlerWrapper) rawHandle(rawContext *gin.Context) {
 	}
 
 	if response == nil {
-		rawContext.AbortWithStatus(context.status)
+		rawContext.AbortWithStatus(int(context.status))
 		return
 	}
-	rawContext.JSON(context.status, response.Interface())
+	rawContext.JSON(int(context.status), response.Interface())
 }

@@ -89,6 +89,18 @@ func genericBuilder(bodyType reflect.Type, bindType binding.Binding) argBuilder 
 	}
 }
 
+func statusBuilder(optional bool) argBuilder {
+	if optional {
+		return func(ctx *callContext) (reflect.Value, error) {
+			return reflect.ValueOf(&ctx.status), nil
+		}
+	} else {
+		return func(ctx *callContext) (reflect.Value, error) {
+			return reflect.ValueOf(ctx.status), nil
+		}
+	}
+}
+
 func rawContextBuilder(ctx *callContext) (reflect.Value, error) {
 	return reflect.ValueOf(ctx.rawContext), nil
 }

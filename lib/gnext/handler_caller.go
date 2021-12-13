@@ -30,6 +30,7 @@ func (c *HandlerCaller) call(ctx *callContext) error {
 	for i, builder := range c.argBuilders {
 		value, err := builder(ctx)
 		if err != nil {
+			ctx.error = err
 			return err
 		}
 		values[i] = value
