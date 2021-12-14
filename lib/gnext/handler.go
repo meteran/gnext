@@ -11,150 +11,239 @@ import (
 
 var paramRegExp = regexp.MustCompile(":[a-zA-Z0-9]+/")
 
-func WrapHandler(method string, path string, handler interface{}) *HandlerWrapper {
+func WrapHandler(method string, path string, middlewares []Middleware, handler interface{}) *HandlerWrapper {
 	wrapper := &HandlerWrapper{
 		method:          method,
 		path:            path,
+		middlewares:     middlewares,
 		originalHandler: handler,
+		params:          newParameters(path),
+		valuesTypes:     map[reflect.Type]int{},
+		defaultStatus:   200,
 	}
 	wrapper.init()
 	return wrapper
 }
 
-func newParameters(path string) parameters {
-	return parameters{
-		paramNames:     paramRegExp.FindAll([]byte(path), -1),
-		nextParamIndex: 0,
+func newParameters(path string) pathParameters {
+	return pathParameters{
+		paramNames: paramRegExp.FindAll([]byte(path), -1),
 	}
 }
 
-type parameters struct {
-	paramNames     [][]byte
-	nextParamIndex int
+type pathParameters struct {
+	paramNames [][]byte
 }
 
-func (p *parameters) next() string {
-	if p.nextParamIndex >= len(p.paramNames) {
-		panic(fmt.Sprintf("too many path parameters in handler; currently in path: %d", len(p.paramNames)))
+func (p *pathParameters) index(index int) string {
+	if index >= len(p.paramNames) {
+		panic(fmt.Sprintf("path parameter index out of range: %d", len(p.paramNames)))
 	}
-	p.nextParamIndex++
-	paramName := string(p.paramNames[p.nextParamIndex-1])
-	return paramName[1:len(paramName)-1]
+	paramName := string(p.paramNames[index])
+	return paramName[1 : len(paramName)-1]
 }
 
 type HandlerWrapper struct {
 	originalHandler interface{}
-	handlerValue    reflect.Value
-	paramBuilders   []builder
+	handlersChain   []*HandlerCaller
 	pathParams      []reflect.Value
-	queryType       *reflect.Type
-	bodyType        *reflect.Type
+	valuesNum       int
+	valuesTypes     map[reflect.Type]int
+	queryType       reflect.Type
+	bodyType        reflect.Type
+	responseType    reflect.Type
 	docs            interface{}
 	method          string
 	path            string
+	middlewares     []Middleware
+	params          pathParameters
+	responseIndex   int
+	defaultStatus   Status
 }
 
 func (w *HandlerWrapper) init() {
 	w.docs = gin.H{"elo": "ole"}
 
-	params := newParameters(w.path)
+	for _, middleware := range w.middlewares {
+		if middleware.Before != nil {
+			w.chainHandler(middleware.Before, false)
+		}
+	}
 
-	w.handlerValue = reflect.ValueOf(w.originalHandler)
-	ht := reflect.TypeOf(w.originalHandler)
+	w.chainHandler(w.originalHandler, true)
+
+	for i := len(w.middlewares) - 1; i >= 0; i-- {
+		middleware := w.middlewares[i]
+		if middleware.After != nil {
+			w.chainHandler(middleware.After, false)
+		}
+	}
+}
+
+func (w *HandlerWrapper) chainHandler(handler interface{}, final bool) {
+	caller := NewHandlerCaller(reflect.ValueOf(handler))
+
+	ht := reflect.TypeOf(handler)
 	if ht.Kind() != reflect.Func {
 		panic("handler is not a function")
 	}
 
-	for i := 0; i < ht.NumIn(); i++ {
-		inParam := ht.In(i)
+	w.inspectInParams(ht, caller)
+	w.inspectOutParams(ht, caller, final)
 
-		switch inParam.Kind() {
-		case reflect.Int:
-			w.addBuilder(intParamBuilder(params.next()))
-		case reflect.String:
-			w.addBuilder(stringParamBuilder(params.next()))
-		case reflect.Struct, reflect.Map, reflect.Array, reflect.Slice:
-			w.appendGeneric(inParam, false)
-		case reflect.Ptr:
-			innerType := inParam.Elem()
-			switch innerType.Kind() {
-			case reflect.Int:
-				w.addBuilder(intOptionalParamBuilder(params.next()))
-			case reflect.String:
-				w.addBuilder(stringOptionalParamBuilder(params.next()))
-			case reflect.Struct, reflect.Map, reflect.Array, reflect.Slice:
-				w.appendGeneric(innerType, true)
+	w.handlersChain = append(w.handlersChain, caller)
+}
+
+func (w *HandlerWrapper) inspectInParams(handlerType reflect.Type, caller *HandlerCaller) {
+	paramIndex := 0
+	for i := 0; i < handlerType.NumIn(); i++ {
+		arg := handlerType.In(i)
+
+		if w.isPathParam(arg) {
+			w.addPathParamBuilder(caller, arg, paramIndex)
+			paramIndex++
+			continue
+		}
+
+		if index, exists := w.valuesTypes[arg]; exists {
+			caller.addBuilder(cachedValue(index))
+			continue
+		}
+
+		switch {
+		case arg == rawContextType:
+			caller.addBuilder(cached(rawContextBuilder, w.valuesNum))
+		case typesEqual(statusType, arg):
+			caller.addBuilder(statusBuilder(arg.Kind() == reflect.Ptr))
+		case arg.Implements(bodyInterfaceType):
+			w.setBodyType(arg)
+			w.addGenericBuilder(caller, arg, binding.JSON)
+		case arg.Implements(queryInterfaceType):
+			w.setQueryType(arg)
+			w.addGenericBuilder(caller, arg, binding.Query)
+		case arg.Implements(headersInterfaceType):
+			w.addGenericBuilder(caller, arg, binding.Header)
+		default:
+			switch w.method {
+			case http.MethodGet, http.MethodDelete, http.MethodHead, http.MethodOptions:
+				w.setQueryType(arg)
+				w.addGenericBuilder(caller, arg, binding.Query)
+			case http.MethodPost, http.MethodPatch, http.MethodPut:
+				w.setBodyType(arg)
+				w.addGenericBuilder(caller, arg, binding.JSON)
 			default:
-				panic("unknown optional parameter")
+				panic("unknown parameter purpose; neither body nor query")
 			}
+		}
+
+		w.valuesTypes[arg] = w.valuesNum
+		w.valuesNum++
+	}
+}
+
+func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller *HandlerCaller, final bool) {
+	for i := 0; i < handlerType.NumOut(); i++ {
+		arg := handlerType.Out(i)
+
+		// response parameters that shouldn't be in cache
+		switch {
+		case typesEqual(headersType, arg):
+			caller.addSetter(headersSetter(arg.Kind() == reflect.Ptr))
+			continue
+		case typesEqual(statusType, arg):
+			caller.addSetter(statusSetter(arg.Kind() == reflect.Ptr))
+			continue
+		case arg.Implements(errorInterfaceType):
+			caller.addSetter(errorSetter)
+			continue
+		}
+
+		if index, exists := w.valuesTypes[arg]; exists {
+			caller.addSetter(valueSetter(index))
+			continue
+		}
+
+		switch {
+		// final means, that it's the original handler
+		// in such case we consider any unknown returned object as a response
+		// just for developer convenience
+		case arg.Implements(responseInterfaceType) || final:
+			w.setResponseType(arg)
+			caller.addSetter(valueSetter(w.valuesNum))
 		default:
-			panic("unknown parameter")
+			caller.addSetter(valueSetter(w.valuesNum))
 		}
+
+		w.valuesTypes[arg] = w.valuesNum
+		w.valuesNum++
 	}
 }
 
-func (w *HandlerWrapper) addBuilder(b builder) {
-	w.paramBuilders = append(w.paramBuilders, b)
+func (w *HandlerWrapper) setBodyType(argType reflect.Type) {
+	if w.bodyType != nil {
+		panic(fmt.Sprintf("ambiguous body type: %s and %s", w.bodyType, argType))
+	}
+	w.bodyType = argType
 }
 
-func (w *HandlerWrapper) appendGeneric(inParam reflect.Type, optional bool) {
-	var paramType string
-	switch {
-	case inParam.Implements(bodyType):
-		paramType = BodyParam
-	case inParam.Implements(queryType):
-		paramType = QueryParam
-	case inParam == headersType:
-		w.addBuilder(headerBuilder(optional))
-		return
-	default:
-		switch w.method {
-		case http.MethodGet, http.MethodDelete, http.MethodHead, http.MethodOptions:
-			paramType = QueryParam
-		case http.MethodPost, http.MethodPatch, http.MethodPut:
-			paramType = BodyParam
-		default:
-			panic("unknown parameter purpose; neither body nor query")
-		}
+func (w *HandlerWrapper) setQueryType(argType reflect.Type) {
+	if w.queryType != nil {
+		panic(fmt.Sprintf("ambiguous query type: %s and %s", w.queryType, argType))
 	}
-
-	var format binding.Binding
-	switch paramType {
-	case BodyParam:
-		if w.bodyType != nil {
-			panic(fmt.Sprintf("ambiguous body parameter: %s and %s", (*w.bodyType).Name(), inParam.Name()))
-		}
-		w.bodyType = &inParam
-		format = binding.JSON
-	case QueryParam:
-		if w.queryType != nil {
-			panic(fmt.Sprintf("ambiguous query parameter: %s and %s", (*w.queryType).Name(), inParam.Name()))
-		}
-		w.queryType = &inParam
-		format = binding.Query
-	}
-
-	w.addBuilder(genericBuilder(inParam, format, optional))
+	w.queryType = argType
 }
 
-func (w *HandlerWrapper) rawHandle(ctx *gin.Context) {
-	values := make([]reflect.Value, len(w.paramBuilders))
-	for i, builder := range w.paramBuilders {
-		value, err := builder(ctx)
+func (w *HandlerWrapper) setResponseType(argType reflect.Type) {
+	if w.responseType != nil {
+		panic(fmt.Sprintf("ambiguous response type: %s and %s", w.responseType, argType))
+	}
+	w.responseType = argType
+	w.responseIndex = w.valuesNum
+}
+
+func (w *HandlerWrapper) isPathParam(argType reflect.Type) bool {
+	if argType.Kind() == reflect.Ptr {
+		argType = argType.Elem()
+	}
+	return argType == intType || argType == stringType
+}
+
+func (w *HandlerWrapper) addPathParamBuilder(caller *HandlerCaller, argType reflect.Type, paramIndex int) {
+	optional := false
+	if argType.Kind() == reflect.Ptr {
+		optional = true
+		argType = argType.Elem()
+	}
+	caller.addBuilder(paramBuilder(argType.Kind(), w.params.index(paramIndex), optional))
+}
+
+func (w *HandlerWrapper) addGenericBuilder(caller *HandlerCaller, argType reflect.Type, bindType binding.Binding) {
+	caller.addBuilder(cached(genericBuilder(argType, bindType), w.valuesNum))
+}
+
+func (w *HandlerWrapper) rawHandle(rawContext *gin.Context) {
+	context := &callContext{
+		rawContext: rawContext,
+		values:     make([]*reflect.Value, w.valuesNum),
+		status:     w.defaultStatus,
+	}
+
+	for _, caller := range w.handlersChain {
+		err := caller.call(context)
 		if err != nil {
-			fmt.Printf("error parsing request: %v\n", err)
-			panic("unhandled errors for now")
+			break
 		}
-		println(value.Type().String())
-		values[i] = value
 	}
 
-	result := w.handlerValue.Call(values)
-	response := result[0]
-	err := result[1]
-	if !err.IsNil() {
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err.Interface())
+	response := context.values[w.responseIndex]
+	if context.error != nil {
+		rawContext.AbortWithStatusJSON(http.StatusInternalServerError, context.error)
 		return
 	}
-	ctx.JSON(200, response.Interface())
+
+	if response == nil {
+		rawContext.AbortWithStatus(int(context.status))
+		return
+	}
+	rawContext.JSON(int(context.status), response.Interface())
 }

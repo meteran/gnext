@@ -12,13 +12,14 @@ func New() *Router {
 	r.GET("/docs", docs.handler)
 	return &Router{
 		engine: r,
-		docs: docs,
+		docs:   docs,
 	}
 }
 
 type Router struct {
-	engine *gin.Engine
-	docs   *Docs
+	engine      *gin.Engine
+	docs        *Docs
+	middlewares []Middleware
 }
 
 func (r *Router) GET(path string, handler interface{}) {
@@ -29,9 +30,8 @@ func (r *Router) POST(path string, handler interface{}) {
 	r.Handle(http.MethodPost, path, handler)
 }
 
-
 func (r *Router) Handle(method string, path string, handler interface{}) {
-	wrapper := WrapHandler(method, path, handler)
+	wrapper := WrapHandler(method, path, r.middlewares, handler)
 	r.docs.append(wrapper.docs)
 	r.engine.Handle(method, path, wrapper.rawHandle)
 }
@@ -40,3 +40,6 @@ func (r *Router) Engine() http.Handler {
 	return r.engine
 }
 
+func (r *Router) Use(middleware Middleware) {
+	r.middlewares = append(r.middlewares, middleware)
+}
