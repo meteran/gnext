@@ -2,8 +2,10 @@ package gnext
 
 import (
 	"fmt"
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"gnext.io/gnext/docs"
 	"net/http"
 	"reflect"
 	"regexp"
@@ -11,17 +13,19 @@ import (
 
 var paramRegExp = regexp.MustCompile(":[a-zA-Z0-9]+/")
 
-func WrapHandler(method string, path string, middlewares []Middleware, handler interface{}) *HandlerWrapper {
+func WrapHandler(method string, path string, middlewares []Middleware, docs *docs.Docs, handler interface{}) *HandlerWrapper {
 	wrapper := &HandlerWrapper{
 		method:          method,
 		path:            path,
 		middlewares:     middlewares,
 		originalHandler: handler,
+		docs:            docs,
 		params:          newParameters(path),
 		valuesTypes:     map[reflect.Type]int{},
 		defaultStatus:   200,
 	}
 	wrapper.init()
+	wrapper.fillDocumentation()
 	return wrapper
 }
 
@@ -52,7 +56,7 @@ type HandlerWrapper struct {
 	queryType       reflect.Type
 	bodyType        reflect.Type
 	responseType    reflect.Type
-	docs            interface{}
+	docs            *docs.Docs
 	method          string
 	path            string
 	middlewares     []Middleware
@@ -62,7 +66,6 @@ type HandlerWrapper struct {
 }
 
 func (w *HandlerWrapper) init() {
-	w.docs = gin.H{"elo": "ole"}
 
 	for _, middleware := range w.middlewares {
 		if middleware.Before != nil {
@@ -78,6 +81,32 @@ func (w *HandlerWrapper) init() {
 			w.chainHandler(middleware.After, false)
 		}
 	}
+}
+
+func (w *HandlerWrapper) fillDocumentation() {
+	docBuilder := docs.NewBuilder(w.docs)
+	var operation openapi3.Operation
+
+	operation.Tags = docBuilder.Helper.GetTagsFromPath(w.path)
+
+	if w.bodyType != nil {
+		bodyModel := docBuilder.Helper.ConvertTypeToInterface(w.bodyType.Elem())
+		operation.RequestBody = docBuilder.Helper.ConvertModelToRequestBody(bodyModel, "")
+	}
+
+	if w.responseType != nil {
+		responseModel := docBuilder.Helper.ConvertTypeToInterface(w.responseType.Elem())
+		operation.Responses = docBuilder.Helper.CreateResponses(responseModel, nil)
+	}
+
+	docBuilder.Helper.AddParametersToOperation(docBuilder.Helper.ParsePathParams(w.path), &operation)
+
+	if w.queryType != nil {
+		queryModel := docBuilder.Helper.ConvertTypeToInterface(w.queryType.Elem())
+		docBuilder.Helper.AddParametersToOperation(docBuilder.Helper.ParseQueryParams(queryModel), &operation)
+	}
+
+	docBuilder.SetOperationOnPath(w.path, w.method, operation)
 }
 
 func (w *HandlerWrapper) chainHandler(handler interface{}, final bool) {
