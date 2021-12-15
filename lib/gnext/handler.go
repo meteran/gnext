@@ -13,16 +13,20 @@ import (
 
 var paramRegExp = regexp.MustCompile(":[a-zA-Z0-9]+/")
 
-func WrapHandler(method string, path string, middlewares []Middleware, docs *docs.Docs, handler interface{}) *HandlerWrapper {
+func WrapHandler(method string, path string, middlewares []Middleware, documentation *docs.Docs, handler interface{}, doc *docs.PathDoc) *HandlerWrapper {
 	wrapper := &HandlerWrapper{
 		method:          method,
 		path:            path,
 		middlewares:     middlewares,
 		originalHandler: handler,
-		docs:            docs,
+		docs:            documentation,
+		doc:             doc,
 		params:          newParameters(path),
 		valuesTypes:     map[reflect.Type]int{},
 		defaultStatus:   200,
+	}
+	if wrapper.doc == nil {
+		wrapper.doc = &docs.PathDoc{}
 	}
 	wrapper.init()
 	wrapper.fillDocumentation()
@@ -57,6 +61,7 @@ type HandlerWrapper struct {
 	bodyType        reflect.Type
 	responseType    reflect.Type
 	docs            *docs.Docs
+	doc             *docs.PathDoc
 	method          string
 	path            string
 	middlewares     []Middleware
@@ -85,28 +90,27 @@ func (w *HandlerWrapper) init() {
 
 func (w *HandlerWrapper) fillDocumentation() {
 	docBuilder := docs.NewBuilder(w.docs)
-	var operation openapi3.Operation
 
-	operation.Tags = docBuilder.Helper.GetTagsFromPath(w.path)
+	w.doc.Tags = docBuilder.Helper.GetTagsFromPath(w.path)
 
 	if w.bodyType != nil {
 		bodyModel := docBuilder.Helper.ConvertTypeToInterface(w.bodyType.Elem())
-		operation.RequestBody = docBuilder.Helper.ConvertModelToRequestBody(bodyModel, "")
+		w.doc.RequestBody = docBuilder.Helper.ConvertModelToRequestBody(bodyModel, "")
 	}
 
 	if w.responseType != nil {
 		responseModel := docBuilder.Helper.ConvertTypeToInterface(w.responseType.Elem())
-		operation.Responses = docBuilder.Helper.CreateResponses(responseModel, nil)
+		w.doc.Responses = docBuilder.Helper.CreateResponses(responseModel, nil)
 	}
 
-	docBuilder.Helper.AddParametersToOperation(docBuilder.Helper.ParsePathParams(w.path), &operation)
+	docBuilder.Helper.AddParametersToOperation(docBuilder.Helper.ParsePathParams(w.path), (*openapi3.Operation)(w.doc))
 
 	if w.queryType != nil {
 		queryModel := docBuilder.Helper.ConvertTypeToInterface(w.queryType.Elem())
-		docBuilder.Helper.AddParametersToOperation(docBuilder.Helper.ParseQueryParams(queryModel), &operation)
+		docBuilder.Helper.AddParametersToOperation(docBuilder.Helper.ParseQueryParams(queryModel), (*openapi3.Operation)(w.doc))
 	}
 
-	docBuilder.SetOperationOnPath(w.path, w.method, operation)
+	docBuilder.SetOperationOnPath(w.path, w.method, openapi3.Operation(*w.doc))
 }
 
 func (w *HandlerWrapper) chainHandler(handler interface{}, final bool) {

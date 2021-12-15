@@ -3,9 +3,8 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"gnext.io/gnext"
-	"gnext.io/gnext/docs"
+	gdocs "gnext.io/gnext/docs"
 	"log"
-	"net/http"
 )
 
 type Response struct {
@@ -35,7 +34,7 @@ func someHandler(param1 int, param2 string, body *Request, query *Query, headers
 
 func main() {
 	router := gnext.New(
-		&docs.Docs{
+		&gdocs.Docs{
 			OpenAPIPath:    "/docs",
 			OpenAPIUrl:     "http://localhost:8000/docs/openapi.json",
 			Title:          "gNext",
@@ -51,21 +50,13 @@ func main() {
 		startValue: 10,
 	}))
 
-	router.GET("/asd/:id/:id2/asd", someHandler)
-	router.POST("/asd/:id/:id2/asd", someHandler)
+	router.GET("/asd/:id/:id2/asd", someHandler, &gdocs.PathDoc{
+		Summary: "test",
+	})
+	router.POST("/asd/:id/:id2/asd", someHandler, nil)
 
-	srv := &http.Server{
-		Addr:    "0.0.0.0:8000",
-		Handler: router.Engine(),
-	}
-
-	err := docs.NewBuilder(router.Docs()).Build()
+	err := router.Run("0.0.0.0:8000")
 	if err != nil {
 		panic(err)
-	}
-
-	log.Println("starting server")
-	if err := srv.ListenAndServe(); err != nil {
-		log.Fatalf("listen: %s\n", err)
 	}
 }

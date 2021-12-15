@@ -1,6 +1,7 @@
 package gnext
 
 import (
+	"fmt"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"gnext.io/gnext/docs"
@@ -36,16 +37,16 @@ type Router struct {
 	middlewares   []Middleware
 }
 
-func (r *Router) GET(path string, handler interface{}) {
-	r.Handle(http.MethodGet, path, handler)
+func (r *Router) GET(path string, handler interface{}, doc *docs.PathDoc) {
+	r.Handle(http.MethodGet, path, handler, doc)
 }
 
-func (r *Router) POST(path string, handler interface{}) {
-	r.Handle(http.MethodPost, path, handler)
+func (r *Router) POST(path string, handler interface{}, doc *docs.PathDoc) {
+	r.Handle(http.MethodPost, path, handler, doc)
 }
 
-func (r *Router) Handle(method string, path string, handler interface{}) {
-	wrapper := WrapHandler(method, path, r.middlewares, r.documentation, handler)
+func (r *Router) Handle(method string, path string, handler interface{}, doc *docs.PathDoc) {
+	wrapper := WrapHandler(method, path, r.middlewares, r.documentation, handler, doc)
 	r.engine.Handle(method, path, wrapper.rawHandle)
 }
 
@@ -57,6 +58,20 @@ func (r *Router) Use(middleware Middleware) {
 	r.middlewares = append(r.middlewares, middleware)
 }
 
-func (r *Router) Docs() *docs.Docs{
+func (r *Router) Docs() *docs.Docs {
 	return r.documentation
+}
+
+func (r *Router) Run(addr string) error {
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: r.Engine(),
+	}
+
+	err := docs.NewBuilder(r.Docs()).Build()
+	if err != nil {
+		panic(fmt.Sprintf("cannot build documentation; error: %v", err))
+	}
+
+	return srv.ListenAndServe()
 }
