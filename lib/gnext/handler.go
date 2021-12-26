@@ -89,28 +89,28 @@ func (w *HandlerWrapper) init() {
 }
 
 func (w *HandlerWrapper) fillDocumentation() {
-	docBuilder := docs.NewBuilder(w.docs)
 
-	w.doc.Tags = docBuilder.Helper.GetTagsFromPath(w.path)
+	w.doc.Tags = w.docs.PathTags(w.path)
 
 	if w.bodyType != nil {
-		bodyModel := docBuilder.Helper.ConvertTypeToInterface(w.bodyType.Elem())
-		w.doc.RequestBody = docBuilder.Helper.ConvertModelToRequestBody(bodyModel, "")
+		bodyModel := w.docs.ConvertTypeToInterface(w.bodyType.Elem())
+		w.doc.RequestBody = w.docs.ConvertModelToRequestBody(bodyModel, "")
 	}
 
 	if w.responseType != nil {
-		responseModel := docBuilder.Helper.ConvertTypeToInterface(w.responseType.Elem())
-		w.doc.Responses = docBuilder.Helper.CreateResponses(responseModel, nil)
+		responseModel := w.docs.ConvertTypeToInterface(w.responseType.Elem())
+		w.doc.Responses = w.docs.CreateResponses(responseModel, nil)
+		w.defaultStatus = Status(w.docs.ResponseDefaultStatus(responseModel))
 	}
 
-	docBuilder.Helper.AddParametersToOperation(docBuilder.Helper.ParsePathParams(w.path), (*openapi3.Operation)(w.doc))
+	w.docs.AddParametersToOperation(w.docs.ParsePathParams(w.params.paramNames), (*openapi3.Operation)(w.doc))
 
 	if w.queryType != nil {
-		queryModel := docBuilder.Helper.ConvertTypeToInterface(w.queryType.Elem())
-		docBuilder.Helper.AddParametersToOperation(docBuilder.Helper.ParseQueryParams(queryModel), (*openapi3.Operation)(w.doc))
+		queryModel := w.docs.ConvertTypeToInterface(w.queryType.Elem())
+		w.docs.AddParametersToOperation(w.docs.ParseQueryParams(queryModel), (*openapi3.Operation)(w.doc))
 	}
 
-	docBuilder.SetOperationOnPath(w.path, w.method, openapi3.Operation(*w.doc))
+	w.docs.SetOperationOnPath(w.path, w.method, openapi3.Operation(*w.doc))
 }
 
 func (w *HandlerWrapper) chainHandler(handler interface{}, final bool) {

@@ -26,7 +26,6 @@ func NewMiddleware(options MiddlewareOptions) gnext.Middleware {
 		},
 		After: func(context *SomeMiddleware, resp *Response, status gnext.Status) {
 			context.count++
-			fmt.Println(resp, status)
 			fmt.Printf("%s\n", time.Now().Sub(context.start))
 		},
 	}

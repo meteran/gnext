@@ -18,6 +18,13 @@ func New(documentation *docs.Docs) *Router {
 		AllowCredentials: true,
 	}))
 
+	documentation.NewOpenAPI()
+
+	err := documentation.Valid()
+	if err != nil {
+		panic(err)
+	}
+
 	r.LoadHTMLGlob("lib/gnext/templates/*.html")
 
 	docHandler := docs.NewHandler(documentation)
@@ -67,10 +74,11 @@ func (r *Router) Run(addr string) error {
 		Addr:    addr,
 		Handler: r.Engine(),
 	}
-
-	err := docs.NewBuilder(r.Docs()).Build()
-	if err != nil {
-		panic(fmt.Sprintf("cannot build documentation; error: %v", err))
+	if !r.Docs().InMemory {
+		err := r.Docs().Build()
+		if err != nil {
+			panic(fmt.Sprintf("cannot build documentation; error: %v", err))
+		}
 	}
 
 	return srv.ListenAndServe()
