@@ -2,8 +2,10 @@ package gnext
 
 import (
 	"fmt"
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"gnext.io/gnext/docs"
 	"net/http"
 	"reflect"
 	"regexp"
@@ -11,17 +13,27 @@ import (
 
 var paramRegExp = regexp.MustCompile(":[a-zA-Z0-9]+/")
 
-func WrapHandler(method string, path string, middlewares []Middleware, handler interface{}) *HandlerWrapper {
+func WrapHandler(method string, path string, middlewares []Middleware, documentation *docs.Docs, handler interface{}, doc ...*docs.PathDoc) *HandlerWrapper {
 	wrapper := &HandlerWrapper{
 		method:          method,
 		path:            path,
 		middlewares:     middlewares,
 		originalHandler: handler,
+		docs:            documentation,
 		params:          newParameters(path),
 		valuesTypes:     map[reflect.Type]int{},
 		defaultStatus:   200,
 	}
+
+	if len(doc) == 0{
+		wrapper.doc = &docs.PathDoc{}
+	}else{
+		wrapper.doc = doc[0]
+	}
+
 	wrapper.init()
+	wrapper.fillDocumentation()
+
 	return wrapper
 }
 
@@ -52,7 +64,8 @@ type HandlerWrapper struct {
 	queryType       reflect.Type
 	bodyType        reflect.Type
 	responseType    reflect.Type
-	docs            interface{}
+	docs            *docs.Docs
+	doc             *docs.PathDoc
 	method          string
 	path            string
 	middlewares     []Middleware
@@ -62,7 +75,6 @@ type HandlerWrapper struct {
 }
 
 func (w *HandlerWrapper) init() {
-	w.docs = gin.H{"elo": "ole"}
 
 	for _, middleware := range w.middlewares {
 		if middleware.Before != nil {
@@ -78,6 +90,31 @@ func (w *HandlerWrapper) init() {
 			w.chainHandler(middleware.After, false)
 		}
 	}
+}
+
+func (w *HandlerWrapper) fillDocumentation() {
+
+	w.doc.Tags = w.docs.PathTags(w.path)
+
+	if w.bodyType != nil {
+		bodyModel := w.docs.ConvertTypeToInterface(w.bodyType.Elem())
+		w.doc.RequestBody = w.docs.ConvertModelToRequestBody(bodyModel, "")
+	}
+
+	if w.responseType != nil {
+		responseModel := w.docs.ConvertTypeToInterface(w.responseType.Elem())
+		w.doc.Responses = w.docs.CreateResponses(responseModel, nil)
+		w.defaultStatus = Status(w.docs.ResponseDefaultStatus(responseModel))
+	}
+
+	w.docs.AddParametersToOperation(w.docs.ParsePathParams(w.params.paramNames), (*openapi3.Operation)(w.doc))
+
+	if w.queryType != nil {
+		queryModel := w.docs.ConvertTypeToInterface(w.queryType.Elem())
+		w.docs.AddParametersToOperation(w.docs.ParseQueryParams(queryModel), (*openapi3.Operation)(w.doc))
+	}
+
+	w.docs.SetOperationOnPath(w.path, w.method, openapi3.Operation(*w.doc))
 }
 
 func (w *HandlerWrapper) chainHandler(handler interface{}, final bool) {
