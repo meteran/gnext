@@ -13,23 +13,27 @@ import (
 
 var paramRegExp = regexp.MustCompile(":[a-zA-Z0-9]+/")
 
-func WrapHandler(method string, path string, middlewares []Middleware, documentation *docs.Docs, handler interface{}, doc *docs.PathDoc) *HandlerWrapper {
+func WrapHandler(method string, path string, middlewares []Middleware, documentation *docs.Docs, handler interface{}, doc ...*docs.PathDoc) *HandlerWrapper {
 	wrapper := &HandlerWrapper{
 		method:          method,
 		path:            path,
 		middlewares:     middlewares,
 		originalHandler: handler,
 		docs:            documentation,
-		doc:             doc,
 		params:          newParameters(path),
 		valuesTypes:     map[reflect.Type]int{},
 		defaultStatus:   200,
 	}
-	if wrapper.doc == nil {
+
+	if len(doc) == 0{
 		wrapper.doc = &docs.PathDoc{}
+	}else{
+		wrapper.doc = doc[0]
 	}
+
 	wrapper.init()
 	wrapper.fillDocumentation()
+
 	return wrapper
 }
 

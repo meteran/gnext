@@ -11,13 +11,6 @@ import (
 func New(documentation *docs.Docs) *Router {
 	r := gin.Default()
 
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"*"},
-		AllowHeaders:     []string{"*"},
-		AllowCredentials: true,
-	}))
-
 	documentation.NewOpenAPI()
 
 	err := documentation.Valid()
@@ -25,12 +18,14 @@ func New(documentation *docs.Docs) *Router {
 		panic(err)
 	}
 
+	docHandler := docs.NewHandler(documentation)
 	r.LoadHTMLGlob("lib/gnext/templates/*.html")
 
-	docHandler := docs.NewHandler(documentation)
+	docGroup := r.Group(documentation.OpenAPIPath)
+	docGroup.GET("", docHandler.Docs)
+	docGroup.GET("/openapi.json", docHandler.File)
+	docGroup.Use(cors.New(*documentation.CORSConfig()))
 
-	r.GET(documentation.OpenAPIPath, docHandler.Docs)
-	r.GET(documentation.OpenAPIPath+"/openapi.json", docHandler.File)
 
 	return &Router{
 		engine:        r,
@@ -48,12 +43,12 @@ func (r *Router) GET(path string, handler interface{}, doc *docs.PathDoc) {
 	r.Handle(http.MethodGet, path, handler, doc)
 }
 
-func (r *Router) POST(path string, handler interface{}, doc *docs.PathDoc) {
-	r.Handle(http.MethodPost, path, handler, doc)
+func (r *Router) POST(path string, handler interface{}, doc ...*docs.PathDoc) {
+	r.Handle(http.MethodPost, path, handler, doc...)
 }
 
-func (r *Router) Handle(method string, path string, handler interface{}, doc *docs.PathDoc) {
-	wrapper := WrapHandler(method, path, r.middlewares, r.documentation, handler, doc)
+func (r *Router) Handle(method string, path string, handler interface{}, doc ...*docs.PathDoc) {
+	wrapper := WrapHandler(method, path, r.middlewares, r.documentation, handler, doc...)
 	r.engine.Handle(method, path, wrapper.rawHandle)
 }
 

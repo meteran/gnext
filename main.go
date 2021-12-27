@@ -35,15 +35,15 @@ func someHandler(param1 int, param2 string, body *Request, query *Query, headers
 func main() {
 	router := gnext.New(
 		&gdocs.Docs{
-			OpenAPIPath:     "/docs",
-			OpenAPIUrl:      "http://localhost:8080/docs/openapi.json",
-			Title:           "gNext",
-			Description:     "",
-			TermsOfService:  "http://localhost/terms",
-			License:         nil,
-			Contact:         nil,
-			Version:         "1.0.0",
-			InMemory:        true,
+			OpenAPIPath:    "/docs",
+			OpenAPIUrl:     "http://localhost:8080/docs/openapi.json",
+			Title:          "gNext",
+			Description:    "",
+			TermsOfService: "http://localhost/terms",
+			License:        nil,
+			Contact:        nil,
+			Version:        "1.0.0",
+			InMemory:       true,
 		},
 	)
 
@@ -54,10 +54,7 @@ func main() {
 	router.GET("/asd/:id/:id2/asd", someHandler, &gdocs.PathDoc{
 		Summary: "test",
 	})
-	router.POST("/asd/:id/:id2/asd", someHandler, &gdocs.PathDoc{
-		Summary: "test",
-	})
-
+	router.POST("/asd/:id/:id2/asd", someHandler)
 
 	//Example swagger servers
 	router.Docs().AddServer("https://api.test.com/v1")

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/fatih/structtag"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin/binding"
 	"mime/multipart"
 	"os"
@@ -37,6 +38,7 @@ type Docs struct {
 	Version         string
 	OpenAPIFilePath string
 	InMemory        bool
+	CORS            *cors.Config
 }
 
 func (d *Docs) NewOpenAPI() {
@@ -380,4 +382,16 @@ func (d *Docs) cleanPathParam(param string) string {
 	wColon := strings.ReplaceAll(param, ":", "")
 	wSlash := strings.ReplaceAll(wColon, "/", "")
 	return wSlash
+}
+
+func (d *Docs) CORSConfig() *cors.Config {
+	if d.CORS == nil {
+		return &cors.Config{
+			AllowOrigins:     []string{"*"},
+			AllowMethods:     []string{"*"},
+			AllowHeaders:     []string{"*"},
+			AllowCredentials: true,
+		}
+	}
+	return d.CORS
 }
