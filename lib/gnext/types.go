@@ -6,6 +6,9 @@ import (
 	"reflect"
 )
 
+type IRouter interface {
+}
+
 type Status int
 
 type HeadersInterface interface {

@@ -51,9 +51,13 @@ func main() {
 		startValue: 10,
 	}))
 
-	router.GET("/asd/:id/:id2/asd", someHandler, &gdocs.PathDoc{
-		Summary: "test",
-	})
+	router.GET(
+		"/asd/:id/:id2/asd",
+		someHandler,
+		&gdocs.PathDoc{
+			Summary: "test",
+		},
+	)
 	router.POST("/asd/:id/:id2/asd", someHandler)
 
 	//Example swagger servers
