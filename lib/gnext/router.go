@@ -2,7 +2,6 @@ package gnext
 
 import (
 	"fmt"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"gnext.io/gnext/docs"
 	"net/http"
@@ -22,7 +21,7 @@ func New(documentation *docs.Docs) *Router {
 	r.LoadHTMLGlob("lib/gnext/templates/*.html")
 
 	docGroup := r.Group(documentation.OpenAPIPath)
-	docGroup.Use(cors.New(*documentation.CORSConfig()))
+	//docGroup.Use(cors.New(*documentation.CORSConfig()))
 	docGroup.GET("", docHandler.Docs)
 	docGroup.GET("/openapi.json", docHandler.File)
 

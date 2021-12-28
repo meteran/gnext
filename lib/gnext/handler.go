@@ -25,9 +25,9 @@ func WrapHandler(method string, path string, middlewares []Middleware, documenta
 		defaultStatus:   200,
 	}
 
-	if len(doc) == 0{
+	if len(doc) == 0 {
 		wrapper.doc = &docs.PathDoc{}
-	}else{
+	} else {
 		wrapper.doc = doc[0]
 	}
 
@@ -136,9 +136,13 @@ func (w *HandlerWrapper) inspectInParams(handlerType reflect.Type, caller *Handl
 	for i := 0; i < handlerType.NumIn(); i++ {
 		arg := handlerType.In(i)
 
-		if w.isPathParam(arg) {
+		switch {
+		case w.isPathParam(arg):
 			w.addPathParamBuilder(caller, arg, paramIndex)
 			paramIndex++
+			continue
+		case typesEqual(statusType, arg):
+			caller.addBuilder(statusBuilder(isPtr(arg)))
 			continue
 		}
 
@@ -150,8 +154,6 @@ func (w *HandlerWrapper) inspectInParams(handlerType reflect.Type, caller *Handl
 		switch {
 		case arg == rawContextType:
 			caller.addBuilder(cached(rawContextBuilder, w.valuesNum))
-		case typesEqual(statusType, arg):
-			caller.addBuilder(statusBuilder(arg.Kind() == reflect.Ptr))
 		case arg.Implements(bodyInterfaceType):
 			w.setBodyType(arg)
 			w.addGenericBuilder(caller, arg, binding.JSON)
@@ -185,10 +187,10 @@ func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller *Hand
 		// response parameters that shouldn't be in cache
 		switch {
 		case typesEqual(headersType, arg):
-			caller.addSetter(headersSetter(arg.Kind() == reflect.Ptr))
+			caller.addSetter(headersSetter(isPtr(arg)))
 			continue
 		case typesEqual(statusType, arg):
-			caller.addSetter(statusSetter(arg.Kind() == reflect.Ptr))
+			caller.addSetter(statusSetter(isPtr(arg)))
 			continue
 		case arg.Implements(errorInterfaceType):
 			caller.addSetter(errorSetter)
@@ -239,7 +241,7 @@ func (w *HandlerWrapper) setResponseType(argType reflect.Type) {
 }
 
 func (w *HandlerWrapper) isPathParam(argType reflect.Type) bool {
-	if argType.Kind() == reflect.Ptr {
+	if isPtr(argType) {
 		argType = argType.Elem()
 	}
 	return argType == intType || argType == stringType
@@ -247,7 +249,7 @@ func (w *HandlerWrapper) isPathParam(argType reflect.Type) bool {
 
 func (w *HandlerWrapper) addPathParamBuilder(caller *HandlerCaller, argType reflect.Type, paramIndex int) {
 	optional := false
-	if argType.Kind() == reflect.Ptr {
+	if isPtr(argType) {
 		optional = true
 		argType = argType.Elem()
 	}
