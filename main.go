@@ -61,8 +61,10 @@ func main() {
 	router.POST("/asd/:id/:id2/asd", someHandler)
 
 	//Example swagger servers
-	router.Docs().AddServer("https://api.test.com/v1")
-	router.Docs().AddServer("http://localhost:8080/")
+	router.Docs.AddServer("https://api.test.com/v1")
+	router.Docs.AddServer("http://localhost:8080/")
+
+	router.Group("/prefix")
 
 	err := router.Run("0.0.0.0:8080")
 	if err != nil {
