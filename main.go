@@ -23,8 +23,13 @@ type Query struct {
 	Order       string `form:"order"`
 }
 
-func someHandler(param1 int, param2 string, query *Query, context *SomeContext) (gnext.Status, *Response) { // NOTE: context comes from middleware
-	fmt.Printf("%v, %v, %v, %v", param1, param2, query, context)
+type Headers struct {
+	gnext.Headers
+	Test string `form:"test"`
+}
+
+func someHandler(param1 int, param2 string, query *Query, context *SomeContext, headers *Headers) (gnext.Status, *Response) { // NOTE: context comes from middleware
+	fmt.Printf("%v, %v, %v, %v, %v", param1, param2, query, context, headers)
 	return 200, &Response{
 		Id:   123,
 		Name: "hello world",
@@ -65,7 +70,7 @@ func main() {
 			Summary: "test",
 		},
 	)
-	router.POST("/asd/:id/:id2/asd", someHandler)
+	router.POST("/header/:id/:id2/", someHandler)
 	group := router.Group("/prefix")
 	group.Use(NewMiddleware2(MiddlewareOptions{
 		startValue: 0,
@@ -73,8 +78,8 @@ func main() {
 	group.POST("/path", innerHandler)
 
 	//Example swagger servers
-	router.Docs.AddServer("https://api.test.com/v1")
 	router.Docs.AddServer("http://localhost:8080/")
+	router.Docs.AddServer("https://api.test.com/v1")
 
 	err := router.Run("0.0.0.0:8080")
 	if err != nil {

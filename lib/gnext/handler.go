@@ -107,8 +107,6 @@ func (w *HandlerWrapper) fillDocumentation() {
 		w.defaultStatus = Status(w.docs.ResponseDefaultStatus(responseModel))
 	}
 
-	w.docs.AddParametersToOperation(w.docs.ParsePathParams(w.params.paramNames), (*openapi3.Operation)(w.doc))
-
 	if w.queryType != nil {
 		queryModel := w.docs.ConvertTypeToInterface(w.queryType.Elem())
 		w.docs.AddParametersToOperation(w.docs.ParseQueryParams(queryModel), (*openapi3.Operation)(w.doc))
@@ -139,7 +137,9 @@ func (w *HandlerWrapper) inspectInParams(handlerType reflect.Type, caller *Handl
 		switch {
 		case w.isPathParam(arg):
 			w.addPathParamBuilder(caller, arg, paramIndex)
+			w.docs.AddParamToOperation(w.params.index(paramIndex), arg, (*openapi3.Operation)(w.doc))
 			paramIndex++
+
 			continue
 		case typesEqual(statusType, arg):
 			caller.addBuilder(statusBuilder(isPtr(arg)))

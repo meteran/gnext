@@ -134,30 +134,19 @@ func (d *Docs) PathTags(path string) []string {
 	return tags
 }
 
-func (d *Docs) ParsePathParams(pathParams [][]byte) openapi3.Parameters {
-	var params openapi3.Parameters
-
-	for _, param := range pathParams {
-		params = append(params, &openapi3.ParameterRef{
-			Value: &openapi3.Parameter{
-				Name:            d.cleanPathParam(string(param)),
-				In:              "path",
-				Description:     "",
-				Style:           "",
-				Explode:         nil,
-				AllowEmptyValue: false,
-				AllowReserved:   false,
-				Deprecated:      false,
-				Required:        false,
-				Schema:          nil,
-				Example:         nil,
-				Examples:        nil,
-				Content:         nil,
+func (d *Docs) AddParamToOperation(paramName string, paramType reflect.Type, operation *openapi3.Operation) {
+	var parameter openapi3.ParameterRef
+	parameter.Value = &openapi3.Parameter{
+		Name: paramName,
+		In:   "path",
+		Schema: &openapi3.SchemaRef{
+			Value: &openapi3.Schema{
+				Type: d.typeAsString(paramType),
 			},
-		})
+		},
 	}
 
-	return params
+	d.AddParametersToOperation(openapi3.Parameters{&parameter}, operation)
 }
 
 func (d *Docs) ParseQueryParams(queryModel interface{}) openapi3.Parameters {
@@ -397,4 +386,15 @@ func (d *Docs) CORSConfig() *cors.Config {
 		}
 	}
 	return d.CORS
+}
+
+func (d *Docs) typeAsString(t reflect.Type) string {
+	switch t.Kind() {
+	case reflect.Int:
+		return "integer"
+	case reflect.String:
+		return "string"
+	default:
+		panic(fmt.Sprintf("unknown type: %v in path params, must be integer or string", t.Kind()))
+	}
 }
