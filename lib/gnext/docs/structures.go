@@ -137,8 +137,9 @@ func (d *Docs) PathTags(path string) []string {
 func (d *Docs) AddParamToOperation(paramName string, paramType reflect.Type, operation *openapi3.Operation) {
 	var parameter openapi3.ParameterRef
 	parameter.Value = &openapi3.Parameter{
-		Name: paramName,
-		In:   "path",
+		Name:     paramName,
+		In:       "path",
+		Required: true,
 		Schema: &openapi3.SchemaRef{
 			Value: &openapi3.Schema{
 				Type: d.typeAsString(paramType),
