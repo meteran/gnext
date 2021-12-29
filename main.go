@@ -1,10 +1,8 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"gnext.io/gnext"
 	gdocs "gnext.io/gnext/docs"
-	"log"
 )
 
 type Response struct {
@@ -24,11 +22,20 @@ type Query struct {
 	Order  string `form:"order"`
 }
 
-func someHandler(param1 int, param2 string, body *Request, query *Query, headers *gnext.Headers, ctx *gin.Context, context *SomeMiddleware) (gnext.Status, *Response) {
-	log.Println(headers)
+func someHandler(param1 int, param2 string, context *SomeContext) (gnext.Status, *Response) {
+	println(context)
 	return 200, &Response{
 		Id:   123,
 		Name: "hello world",
+	}
+}
+
+func innerHandler(request *Request, context *SomeContext, context2 *SomeContext2) *Response {
+	println(context)
+	println(context2)
+	return &Response{
+		Id:   0,
+		Name: "123",
 	}
 }
 
@@ -51,14 +58,23 @@ func main() {
 		startValue: 10,
 	}))
 
-	router.GET("/asd/:id/:id2/asd", someHandler, &gdocs.PathDoc{
-		Summary: "test",
-	})
+	router.GET(
+		"/asd/:id/:id2/asd",
+		someHandler,
+		&gdocs.PathDoc{
+			Summary: "test",
+		},
+	)
 	router.POST("/asd/:id/:id2/asd", someHandler)
+	group := router.Group("/prefix")
+	group.Use(NewMiddleware2(MiddlewareOptions{
+		startValue: 0,
+	}))
+	group.POST("/path", innerHandler)
 
 	//Example swagger servers
-	router.Docs().AddServer("https://api.test.com/v1")
-	router.Docs().AddServer("http://localhost:8080/")
+	router.Docs.AddServer("https://api.test.com/v1")
+	router.Docs.AddServer("http://localhost:8080/")
 
 	err := router.Run("0.0.0.0:8080")
 	if err != nil {

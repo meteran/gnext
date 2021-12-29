@@ -2,9 +2,29 @@ package gnext
 
 import (
 	"github.com/gin-gonic/gin"
+	"gnext.io/gnext/docs"
 	"net/http"
 	"reflect"
 )
+
+type IRouter interface {
+	IRoutes
+	Group(string, ...*docs.PathDoc) IRouter
+}
+
+type IRoutes interface {
+	Use(Middleware) IRoutes
+
+	Handle(string, string, interface{}, ...*docs.PathDoc) IRoutes
+	Any(string, interface{}, ...*docs.PathDoc) IRoutes
+	GET(string, interface{}, ...*docs.PathDoc) IRoutes
+	POST(string, interface{}, ...*docs.PathDoc) IRoutes
+	DELETE(string, interface{}, ...*docs.PathDoc) IRoutes
+	PATCH(string, interface{}, ...*docs.PathDoc) IRoutes
+	PUT(string, interface{}, ...*docs.PathDoc) IRoutes
+	OPTIONS(string, interface{}, ...*docs.PathDoc) IRoutes
+	HEAD(string, interface{}, ...*docs.PathDoc) IRoutes
+}
 
 type Status int
 

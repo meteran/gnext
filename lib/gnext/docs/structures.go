@@ -323,6 +323,9 @@ func (d *Docs) modelSchema(model interface{}) *openapi3.Schema {
 			if err != nil {
 				panic(err)
 			}
+			if !value.CanInterface() {
+				continue
+			}
 			fieldSchema := d.defaultModelSchema(value.Interface())
 			bindingTag, err := tags.Get(Binding)
 			if err == nil {
