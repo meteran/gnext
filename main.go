@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"gnext.io/gnext"
 	gdocs "gnext.io/gnext/docs"
 )
@@ -11,28 +12,27 @@ type Response struct {
 	Name           string `json:"name"`
 }
 type Request struct {
-	gnext.Body
-	Name string `json:"name"`
+	gnext.Body        // optional if the handler has just one unknown type and method is POST/PUT/PATCH
+	Name       string `json:"name"`
 }
 
 type Query struct {
-	gnext.Query
-	Limit  int    `form:"limit"`
-	Offset int    `form:"offset"`
-	Order  string `form:"order"`
+	gnext.Query        // optional if the handler has just one unknown type and method is GET/HEAD/DELETE/OPTIONS
+	Limit       int    `form:"limit"`
+	Offset      int    `form:"offset"`
+	Order       string `form:"order"`
 }
 
-func someHandler(param1 int, param2 string, context *SomeContext) (gnext.Status, *Response) {
-	println(context)
+func someHandler(param1 int, param2 string, query *Query, context *SomeContext) (gnext.Status, *Response) { // NOTE: context comes from middleware
+	fmt.Printf("%v, %v, %v, %v", param1, param2, query, context)
 	return 200, &Response{
 		Id:   123,
 		Name: "hello world",
 	}
 }
 
-func innerHandler(request *Request, context *SomeContext, context2 *SomeContext2) *Response {
-	println(context)
-	println(context2)
+func innerHandler(request *Request, context *SomeContext, context2 *SomeContext2) *Response { // NOTE: both contexts come from middlewares
+	fmt.Printf("%v, %v, %v", request, context, context2)
 	return &Response{
 		Id:   0,
 		Name: "123",
