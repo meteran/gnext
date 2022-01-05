@@ -1,65 +1,83 @@
 package main
 
 import (
+	"fmt"
 	"gnext.io/gnext"
-	"net/http"
-
-	"log"
+	gdocs "gnext.io/gnext/docs"
 )
 
 type Response struct {
-	Id   int    `json:"id"`
-	Name string `json:"name"`
+	gnext.Response `default_status:"200"`
+	Id             int    `json:"id"`
+	Name           string `json:"name"`
 }
 type Request struct {
-	gnext.Body
-	Name string `json:"name"`
+	gnext.Body        // optional if the handler has just one unknown type and method is POST/PUT/PATCH
+	Name       string `json:"name"`
 }
 
 type Query struct {
-	gnext.Query
-	Limit  int    `form:"limit"`
-	Offset int    `form:"offset"`
-	Order  string `form:"order"`
+	gnext.Query        // optional if the handler has just one unknown type and method is GET/HEAD/DELETE/OPTIONS
+	Limit       int    `form:"limit"`
+	Offset      int    `form:"offset"`
+	Order       string `form:"order"`
 }
 
-type QueryM map[string]struct{}
-
-func (m QueryM) QueryDocs() {}
-
-type ErrorResult struct {
-	Message string `json:"message"`
-}
-
-func (e *ErrorResult) StatusCodes() []int {
-	return []int{409, 422}
-}
-
-type User struct {
-}
-
-func someHandler(param1 int, param2 string, body *Request, query *Query, headers gnext.Headers) (*Response, *ErrorResult) {
-	log.Println(param1, param2, body, query, headers)
-	return &Response{
+func someHandler(param1 int, param2 string, query *Query, context *SomeContext) (gnext.Status, *Response) { // NOTE: context comes from middleware
+	fmt.Printf("%v, %v, %v, %v", param1, param2, query, context)
+	return 200, &Response{
 		Id:   123,
 		Name: "hello world",
-	}, nil
+	}
+}
+
+func innerHandler(request *Request, context *SomeContext, context2 *SomeContext2) *Response { // NOTE: both contexts come from middlewares
+	fmt.Printf("%v, %v, %v", request, context, context2)
+	return &Response{
+		Id:   0,
+		Name: "123",
+	}
 }
 
 func main() {
-	router := gnext.New()
+	router := gnext.New(
+		&gdocs.Docs{
+			OpenAPIPath:    "/docs",
+			OpenAPIUrl:     "http://localhost:8080/docs/openapi.json",
+			Title:          "gNext",
+			Description:    "",
+			TermsOfService: "http://localhost/terms",
+			License:        nil,
+			Contact:        nil,
+			Version:        "1.0.0",
+			InMemory:       true,
+		},
+	)
 
-	router.GET("/asd/:id/:id2/asd", someHandler)
+	router.Use(NewMiddleware(MiddlewareOptions{
+		startValue: 10,
+	}))
+
+	router.GET(
+		"/asd/:id/:id2/asd",
+		someHandler,
+		&gdocs.PathDoc{
+			Summary: "test",
+		},
+	)
 	router.POST("/asd/:id/:id2/asd", someHandler)
-	//router.POST("/asd/", someHandler)
-	//
-	srv := &http.Server{
-		Addr:    "0.0.0.0:8000",
-		Handler: router.Engine(),
-	}
+	group := router.Group("/prefix")
+	group.Use(NewMiddleware2(MiddlewareOptions{
+		startValue: 0,
+	}))
+	group.POST("/path", innerHandler)
 
-	log.Println("starting server")
-	if err := srv.ListenAndServe(); err != nil {
-		log.Fatalf("listen: %s\n", err)
+	//Example swagger servers
+	router.Docs.AddServer("https://api.test.com/v1")
+	router.Docs.AddServer("http://localhost:8080/")
+
+	err := router.Run("0.0.0.0:8080")
+	if err != nil {
+		panic(err)
 	}
 }

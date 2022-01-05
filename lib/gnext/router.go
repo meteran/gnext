@@ -1,42 +1,62 @@
 package gnext
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"gnext.io/gnext/docs"
 	"net/http"
 )
 
-func New() *Router {
+func New(documentation *docs.Docs) *Router {
 	r := gin.Default()
 
-	docs := NewDocs()
-	r.GET("/docs", docs.handler)
+	documentation.NewOpenAPI()
+
+	err := documentation.Valid()
+	if err != nil {
+		panic(err)
+	}
+
+	docHandler := docs.NewHandler(documentation)
+	r.LoadHTMLGlob("lib/gnext/templates/*.html")
+
+	docGroup := r.Group(documentation.OpenAPIPath)
+	//docGroup.Use(cors.New(*documentation.CORSConfig()))
+	docGroup.GET("", docHandler.Docs)
+	docGroup.GET("/openapi.json", docHandler.File)
+
 	return &Router{
+		routerGroup: routerGroup{
+			pathPrefix:  "",
+			rawRouter:   r,
+			middlewares: nil,
+			Docs:        documentation,
+		},
 		engine: r,
-		docs: docs,
 	}
 }
 
 type Router struct {
-	engine *gin.Engine
-	docs   *Docs
-}
-
-func (r *Router) GET(path string, handler interface{}) {
-	r.Handle(http.MethodGet, path, handler)
-}
-
-func (r *Router) POST(path string, handler interface{}) {
-	r.Handle(http.MethodPost, path, handler)
-}
-
-
-func (r *Router) Handle(method string, path string, handler interface{}) {
-	wrapper := WrapHandler(method, path, handler)
-	r.docs.append(wrapper.docs)
-	r.engine.Handle(method, path, wrapper.rawHandle)
+	routerGroup
+	engine        *gin.Engine
+	documentation *docs.Docs
 }
 
 func (r *Router) Engine() http.Handler {
 	return r.engine
 }
 
+func (r *Router) Run(addr string) error {
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: r.engine,
+	}
+	if !r.Docs.InMemory {
+		err := r.Docs.Build()
+		if err != nil {
+			panic(fmt.Sprintf("cannot build documentation; error: %v", err))
+		}
+	}
+
+	return srv.ListenAndServe()
+}
