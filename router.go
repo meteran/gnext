@@ -18,9 +18,8 @@ func New(documentation *docs.Docs) *Router {
 	}
 
 	docHandler := docs.NewHandler(documentation)
-	r.LoadHTMLGlob("lib/gnext/templates/*.html")
-
 	docGroup := r.Group(documentation.OpenAPIPath)
+
 	//docGroup.Use(cors.New(*documentation.CORSConfig()))
 	docGroup.GET("", docHandler.Docs)
 	docGroup.GET("/openapi.json", docHandler.File)
