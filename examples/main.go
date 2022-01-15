@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"gnext.io/gnext"
-	gdocs "gnext.io/gnext/docs"
+	"github.com/meteran/gnext"
+	gdocs "github.com/meteran/gnext/docs"
 )
 
 type Response struct {
