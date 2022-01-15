@@ -3,7 +3,7 @@ package gnext
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"gnext.io/gnext/docs"
+	"github.com/meteran/gnext/docs"
 	"net/http"
 )
 

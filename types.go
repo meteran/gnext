@@ -2,7 +2,7 @@ package gnext
 
 import (
 	"github.com/gin-gonic/gin"
-	"gnext.io/gnext/docs"
+	"github.com/meteran/gnext/docs"
 	"net/http"
 	"reflect"
 )

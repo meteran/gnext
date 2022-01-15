@@ -5,7 +5,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"gnext.io/gnext/docs"
+	"github.com/meteran/gnext/docs"
 	"net/http"
 	"reflect"
 	"regexp"
