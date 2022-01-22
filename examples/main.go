@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/meteran/gnext"
 	gdocs "github.com/meteran/gnext/docs"
+	"log"
 )
 
 type Response struct {
@@ -44,8 +45,19 @@ func innerHandler(request *Request, context *SomeContext, context2 *SomeContext2
 	}
 }
 
+type ErrorResponse struct {
+	gnext.ErrorResponse `status_codes:"400,401,403,409,422"`
+	Message             string `json:"message"`
+	Success             bool   `json:"success"`
+}
+
+func dummyErrorHandler(err error) (gnext.Status, *ErrorResponse) {
+	log.Printf("[222432755] err: %v", err)
+	return 200, &ErrorResponse{Message: err.Error(), Success: true}
+}
+
 func main() {
-	router := gnext.New(
+	router := gnext.DocumentedRouter(
 		&gdocs.Docs{
 			OpenAPIPath:    "/docs",
 			OpenAPIUrl:     "http://localhost:8080/docs/openapi.json",
@@ -75,6 +87,7 @@ func main() {
 	group.Use(NewMiddleware2(MiddlewareOptions{
 		startValue: 0,
 	}))
+	group.OnError(dummyErrorHandler)
 	group.POST("/path", innerHandler)
 
 	//Example swagger servers

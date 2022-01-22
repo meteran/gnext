@@ -18,3 +18,7 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 )
+
+replace (
+	github.com/meteran/gnext v0.1.0 => ../
+)

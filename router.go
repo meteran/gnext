@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func New(documentation *docs.Docs) *Router {
+func DocumentedRouter(documentation *docs.Docs) *RootRouter {
 	r := gin.Default()
 
 	documentation.NewOpenAPI()
@@ -20,32 +20,31 @@ func New(documentation *docs.Docs) *Router {
 	docHandler := docs.NewHandler(documentation)
 	docGroup := r.Group(documentation.OpenAPIPath)
 
-	//docGroup.Use(cors.New(*documentation.CORSConfig()))
 	docGroup.GET("", docHandler.Docs)
 	docGroup.GET("/openapi.json", docHandler.File)
 
-	return &Router{
+	return &RootRouter{
 		routerGroup: routerGroup{
-			pathPrefix:  "",
-			rawRouter:   r,
-			middlewares: nil,
-			Docs:        documentation,
+			pathPrefix:   "",
+			rawRouter:    r,
+			middlewares:  nil,
+			Docs:         documentation,
+			errorHandler: errorHandler,
 		},
 		engine: r,
 	}
 }
 
-type Router struct {
+type RootRouter struct {
 	routerGroup
-	engine        *gin.Engine
-	documentation *docs.Docs
+	engine *gin.Engine
 }
 
-func (r *Router) Engine() http.Handler {
+func (r *RootRouter) Engine() http.Handler {
 	return r.engine
 }
 
-func (r *Router) Run(addr string) error {
+func (r *RootRouter) Run(addr string) error {
 	srv := &http.Server{
 		Addr:    addr,
 		Handler: r.engine,

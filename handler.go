@@ -13,12 +13,13 @@ import (
 
 var paramRegExp = regexp.MustCompile(":[a-zA-Z0-9]+/")
 
-func WrapHandler(method string, path string, middlewares []Middleware, documentation *docs.Docs, handler interface{}, doc ...*docs.PathDoc) *HandlerWrapper {
+func WrapHandler(method string, path string, middlewares []Middleware, documentation *docs.Docs, handler, errorHandler interface{}, doc ...*docs.PathDoc) *HandlerWrapper {
 	wrapper := &HandlerWrapper{
 		method:          method,
 		path:            path,
 		middlewares:     middlewares,
 		originalHandler: handler,
+		errorHandler:    errorHandler,
 		docs:            documentation,
 		params:          newParameters(path),
 		valuesTypes:     map[reflect.Type]int{},
@@ -57,6 +58,7 @@ func (p *pathParameters) index(index int) string {
 
 type HandlerWrapper struct {
 	originalHandler interface{}
+	errorHandler    interface{}
 	handlersChain   []*HandlerCaller
 	pathParams      []reflect.Value
 	valuesNum       int
@@ -75,7 +77,6 @@ type HandlerWrapper struct {
 }
 
 func (w *HandlerWrapper) init() {
-
 	for _, middleware := range w.middlewares {
 		if middleware.Before != nil {
 			w.chainHandler(middleware.Before, false)
@@ -90,29 +91,8 @@ func (w *HandlerWrapper) init() {
 			w.chainHandler(middleware.After, false)
 		}
 	}
-}
 
-func (w *HandlerWrapper) fillDocumentation() {
-
-	w.doc.Tags = w.docs.PathTags(w.path)
-
-	if w.bodyType != nil {
-		bodyModel := w.docs.ConvertTypeToInterface(w.bodyType.Elem())
-		w.doc.RequestBody = w.docs.ConvertModelToRequestBody(bodyModel, "")
-	}
-
-	if w.responseType != nil {
-		responseModel := w.docs.ConvertTypeToInterface(w.responseType.Elem())
-		w.doc.Responses = w.docs.CreateResponses(responseModel, nil)
-		w.defaultStatus = Status(w.docs.ResponseDefaultStatus(responseModel))
-	}
-
-	if w.queryType != nil {
-		queryModel := w.docs.ConvertTypeToInterface(w.queryType.Elem())
-		w.docs.AddParametersToOperation(w.docs.ParseQueryParams(queryModel), (*openapi3.Operation)(w.doc))
-	}
-
-	w.docs.SetOperationOnPath(w.path, w.method, openapi3.Operation(*w.doc))
+	// TODO chain error handler here
 }
 
 func (w *HandlerWrapper) chainHandler(handler interface{}, final bool) {
@@ -258,6 +238,29 @@ func (w *HandlerWrapper) addPathParamBuilder(caller *HandlerCaller, argType refl
 
 func (w *HandlerWrapper) addGenericBuilder(caller *HandlerCaller, argType reflect.Type, bindType binding.Binding) {
 	caller.addBuilder(cached(genericBuilder(argType, bindType), w.valuesNum))
+}
+
+func (w *HandlerWrapper) fillDocumentation() {
+
+	w.doc.Tags = w.docs.PathTags(w.path)
+
+	if w.bodyType != nil {
+		bodyModel := w.docs.ConvertTypeToInterface(w.bodyType.Elem())
+		w.doc.RequestBody = w.docs.ConvertModelToRequestBody(bodyModel, "")
+	}
+
+	if w.responseType != nil {
+		responseModel := w.docs.ConvertTypeToInterface(w.responseType.Elem())
+		w.doc.Responses = w.docs.CreateResponses(responseModel, nil)
+		w.defaultStatus = Status(w.docs.ResponseDefaultStatus(responseModel))
+	}
+
+	if w.queryType != nil {
+		queryModel := w.docs.ConvertTypeToInterface(w.queryType.Elem())
+		w.docs.AddParametersToOperation(w.docs.ParseQueryParams(queryModel), (*openapi3.Operation)(w.doc))
+	}
+
+	w.docs.SetOperationOnPath(w.path, w.method, openapi3.Operation(*w.doc))
 }
 
 func (w *HandlerWrapper) rawHandle(rawContext *gin.Context) {

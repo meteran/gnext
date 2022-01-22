@@ -7,10 +7,16 @@ import (
 )
 
 type routerGroup struct {
-	pathPrefix  string
-	rawRouter   gin.IRouter
-	middlewares []Middleware
-	Docs        *docs.Docs
+	pathPrefix   string
+	rawRouter    gin.IRouter
+	middlewares  []Middleware
+	Docs         *docs.Docs
+	errorHandler interface{}
+}
+
+func (g *routerGroup) OnError(errorHandler interface{}) IRoutes {
+	g.errorHandler = errorHandler
+	return g
 }
 
 func (g *routerGroup) Any(path string, handler interface{}, doc ...*docs.PathDoc) IRoutes {
@@ -49,7 +55,7 @@ func (g *routerGroup) POST(path string, handler interface{}, doc ...*docs.PathDo
 }
 
 func (g *routerGroup) Handle(method string, path string, handler interface{}, doc ...*docs.PathDoc) IRoutes {
-	wrapper := WrapHandler(method, g.fullPath(path), g.middlewares, g.Docs, handler, doc...)
+	wrapper := WrapHandler(method, g.fullPath(path), g.middlewares, g.Docs, handler, g.errorHandler, doc...)
 	g.rawRouter.Handle(method, path, wrapper.rawHandle)
 	return g
 }
@@ -61,10 +67,11 @@ func (g *routerGroup) Use(middleware Middleware) IRoutes {
 
 func (g *routerGroup) Group(prefix string, _ ...*docs.PathDoc) IRouter {
 	return &routerGroup{
-		pathPrefix:  g.fullPath(prefix),
-		rawRouter:   g.rawRouter.Group(prefix),
-		middlewares: append([]Middleware{}, g.middlewares...),
-		Docs:        g.Docs,
+		pathPrefix:   g.fullPath(prefix),
+		rawRouter:    g.rawRouter.Group(prefix),
+		middlewares:  append([]Middleware{}, g.middlewares...),
+		Docs:         g.Docs,
+		errorHandler: g.errorHandler,
 	}
 }
 
