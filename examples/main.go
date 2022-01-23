@@ -57,6 +57,7 @@ func dummyErrorHandler(err error) (gnext.Status, *ErrorResponse) {
 }
 
 func main() {
+	//router := gnext.Router()
 	router := gnext.DocumentedRouter(
 		&gdocs.Docs{
 			OpenAPIPath:    "/docs",
@@ -75,13 +76,7 @@ func main() {
 		startValue: 10,
 	}))
 
-	router.GET(
-		"/asd/:id/:id2/asd",
-		someHandler,
-		&gdocs.PathDoc{
-			Summary: "test",
-		},
-	)
+	router.GET("/asd/:id/:id2/asd", someHandler, &gdocs.PathDoc{Summary: "test"})
 	router.POST("/header/:id/:id2/", someHandler)
 	group := router.Group("/prefix")
 	group.Use(NewMiddleware2(MiddlewareOptions{
@@ -91,8 +86,8 @@ func main() {
 	group.POST("/path", innerHandler)
 
 	//Example swagger servers
-	router.Docs.AddServer("http://localhost:8080/")
-	router.Docs.AddServer("https://api.test.com/v1")
+	//router.Docs.AddServer("http://localhost:8080/")
+	//router.Docs.AddServer("https://api.test.com/v1")
 
 	err := router.Run("0.0.0.0:8080")
 	if err != nil {

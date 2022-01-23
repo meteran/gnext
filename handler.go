@@ -33,8 +33,9 @@ func WrapHandler(method string, path string, middlewares []Middleware, documenta
 	}
 
 	wrapper.init()
-	wrapper.fillDocumentation()
-
+	if wrapper.documentedRouter() {
+		wrapper.fillDocumentation()
+	}
 	return wrapper
 }
 
@@ -74,6 +75,10 @@ type HandlerWrapper struct {
 	params          pathParameters
 	responseIndex   int
 	defaultStatus   Status
+}
+
+func (w *HandlerWrapper) documentedRouter() bool {
+	return w.docs != nil
 }
 
 func (w *HandlerWrapper) init() {
@@ -117,7 +122,9 @@ func (w *HandlerWrapper) inspectInParams(handlerType reflect.Type, caller *Handl
 		switch {
 		case w.isPathParam(arg):
 			w.addPathParamBuilder(caller, arg, paramIndex)
-			w.docs.AddParamToOperation(w.params.index(paramIndex), arg, (*openapi3.Operation)(w.doc))
+			if w.documentedRouter() {
+				w.docs.AddParamToOperation(w.params.index(paramIndex), arg, (*openapi3.Operation)(w.doc))
+			}
 			paramIndex++
 
 			continue
