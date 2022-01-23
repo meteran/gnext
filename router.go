@@ -7,6 +7,21 @@ import (
 	"net/http"
 )
 
+func Router() *RootRouter {
+	r := gin.Default()
+
+	return &RootRouter{
+		routerGroup: routerGroup{
+			pathPrefix:   "",
+			rawRouter:    r,
+			middlewares:  nil,
+			Docs:         nil,
+			errorHandler: errorHandler,
+		},
+		engine: r,
+	}
+}
+
 func DocumentedRouter(documentation *docs.Docs) *RootRouter {
 	r := gin.Default()
 
@@ -49,7 +64,7 @@ func (r *RootRouter) Run(addr string) error {
 		Addr:    addr,
 		Handler: r.engine,
 	}
-	if !r.Docs.InMemory {
+	if r.Docs != nil && !r.Docs.InMemory {
 		err := r.Docs.Build()
 		if err != nil {
 			panic(fmt.Sprintf("cannot build documentation; error: %v", err))
