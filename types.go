@@ -91,15 +91,3 @@ type DefaultErrorResponse struct {
 	Message       string `json:"message"`
 	Success       bool   `json:"success"`
 }
-
-func errorHandler(err error) (Status, *DefaultErrorResponse) {
-	e := &DefaultErrorResponse{
-		Success: false,
-		Message: err.Error(),
-	}
-
-	switch err.(type) {
-	default:
-		return http.StatusInternalServerError, e
-	}
-}

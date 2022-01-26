@@ -8,7 +8,7 @@ import (
 )
 
 type Response struct {
-	gnext.Response `default_status:"200"`
+	gnext.Response `default_status:"200" status_codes:"201,202"`
 	Id             int    `json:"id"`
 	Name           string `json:"name"`
 }

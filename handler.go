@@ -19,7 +19,7 @@ func WrapHandler(method string, path string, middlewares []Middleware, documenta
 		path:            path,
 		middlewares:     middlewares,
 		originalHandler: handler,
-		errorHandler:    errorHandler,
+		errorHandler:    WrapErrorHandler(errorHandler),
 		docs:            documentation,
 		params:          newParameters(path),
 		valuesTypes:     map[reflect.Type]int{},
@@ -59,9 +59,9 @@ func (p *pathParameters) index(index int) string {
 
 type HandlerWrapper struct {
 	originalHandler interface{}
-	errorHandler    interface{}
 	handlersChain   []*HandlerCaller
 	pathParams      []reflect.Value
+	errorHandler    *ErrorHandlerCaller
 	valuesNum       int
 	valuesTypes     map[reflect.Type]int
 	queryType       reflect.Type
@@ -96,8 +96,6 @@ func (w *HandlerWrapper) init() {
 			w.chainHandler(middleware.After, false)
 		}
 	}
-
-	// TODO chain error handler here
 }
 
 func (w *HandlerWrapper) chainHandler(handler interface{}, final bool) {
@@ -105,7 +103,7 @@ func (w *HandlerWrapper) chainHandler(handler interface{}, final bool) {
 
 	ht := reflect.TypeOf(handler)
 	if ht.Kind() != reflect.Func {
-		panic("handler is not a function")
+		panic(fmt.Sprintf("'%s' is not a function", ht))
 	}
 
 	w.inspectInParams(ht, caller)
@@ -190,7 +188,7 @@ func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller *Hand
 		}
 
 		switch {
-		// final means, that it's the original handler
+		// `final` means, that it's the original handler
 		// in such case we consider any unknown returned object as a response
 		// just for developer convenience
 		case arg.Implements(responseInterfaceType) || final:
@@ -248,7 +246,6 @@ func (w *HandlerWrapper) addGenericBuilder(caller *HandlerCaller, argType reflec
 }
 
 func (w *HandlerWrapper) fillDocumentation() {
-
 	w.doc.Tags = w.docs.PathTags(w.path)
 
 	if w.bodyType != nil {
@@ -258,7 +255,8 @@ func (w *HandlerWrapper) fillDocumentation() {
 
 	if w.responseType != nil {
 		responseModel := w.docs.ConvertTypeToInterface(w.responseType.Elem())
-		w.doc.Responses = w.docs.CreateResponses(responseModel, nil)
+		errorResponseModel := w.docs.ConvertTypeToInterface(w.errorHandler.responseType.Elem())
+		w.doc.Responses = w.docs.CreateResponses(responseModel, errorResponseModel)
 		w.defaultStatus = Status(w.docs.ResponseDefaultStatus(responseModel))
 	}
 
@@ -284,12 +282,12 @@ func (w *HandlerWrapper) rawHandle(rawContext *gin.Context) {
 		}
 	}
 
-	response := context.values[w.responseIndex]
 	if context.error != nil {
-		rawContext.AbortWithStatusJSON(http.StatusInternalServerError, context.error)
+		w.errorHandler.call(context, err)
 		return
 	}
 
+	response := context.values[w.responseIndex]
 	if response == nil {
 		rawContext.AbortWithStatus(int(context.status))
 		return

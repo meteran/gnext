@@ -16,7 +16,7 @@ func Router() *RootRouter {
 			rawRouter:    r,
 			middlewares:  nil,
 			Docs:         nil,
-			errorHandler: errorHandler,
+			errorHandler: DefaultErrorHandler,
 		},
 		engine: r,
 	}
@@ -44,7 +44,7 @@ func DocumentedRouter(documentation *docs.Docs) *RootRouter {
 			rawRouter:    r,
 			middlewares:  nil,
 			Docs:         documentation,
-			errorHandler: errorHandler,
+			errorHandler: DefaultErrorHandler,
 		},
 		engine: r,
 	}
