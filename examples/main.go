@@ -15,6 +15,8 @@ type Response struct {
 type Request struct {
 	gnext.Body        // optional if the handler has just one unknown type and method is POST/PUT/PATCH
 	Name       string `json:"name"`
+	LastName   string `json:"last_name" binding:"required"`
+	Age        int    `json:"age"`
 }
 
 type Query struct {

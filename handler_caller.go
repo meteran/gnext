@@ -25,13 +25,14 @@ func (c *HandlerCaller) addBuilder(b argBuilder) {
 	c.argBuilders = append(c.argBuilders, b)
 }
 
-func (c *HandlerCaller) call(ctx *callContext) error {
+func (c *HandlerCaller) call(ctx *callContext) {
 	values := make([]reflect.Value, len(c.argBuilders))
 	for i, builder := range c.argBuilders {
 		value, err := builder(ctx)
 		if err != nil {
-			ctx.error = err
-			return err
+			errValue := reflect.ValueOf(err)
+			ctx.error = &errValue
+			return
 		}
 		values[i] = value
 	}
@@ -40,5 +41,4 @@ func (c *HandlerCaller) call(ctx *callContext) error {
 	for i, setter := range c.argSetters {
 		setter(&results[i], ctx)
 	}
-	return ctx.error
 }

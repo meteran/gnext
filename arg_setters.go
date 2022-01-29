@@ -11,7 +11,7 @@ func valueSetter(contextIndex int) argSetter {
 }
 
 func errorSetter(value *reflect.Value, ctx *callContext) {
-	ctx.error, _ = value.Interface().(error)
+	ctx.error = value
 }
 
 func headersSetter(optional bool) argSetter {

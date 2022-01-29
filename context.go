@@ -8,6 +8,6 @@ import (
 type callContext struct {
 	rawContext *gin.Context
 	values     []*reflect.Value
-	error      error
+	error      *reflect.Value
 	status     Status
 }

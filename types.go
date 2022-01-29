@@ -87,7 +87,8 @@ type Middleware struct {
 type MiddlewareFactory func() Middleware
 
 type DefaultErrorResponse struct {
-	ErrorResponse `status_codes:"400,422"`
-	Message       string `json:"message"`
-	Success       bool   `json:"success"`
+	ErrorResponse `status_codes:"4XX,5XX"`
+	Message       string   `json:"message"`
+	Details       []string `json:"details"`
+	Success       bool     `json:"success"`
 }

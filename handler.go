@@ -276,14 +276,14 @@ func (w *HandlerWrapper) rawHandle(rawContext *gin.Context) {
 	}
 
 	for _, caller := range w.handlersChain {
-		err := caller.call(context)
-		if err != nil {
+		caller.call(context)
+		if context.error != nil {
 			break
 		}
 	}
 
 	if context.error != nil {
-		w.errorHandler.call(context, err)
+		w.errorHandler.call(context)
 		return
 	}
 

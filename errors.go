@@ -1,5 +1,4 @@
 package gnext
 
-import "fmt"
-
-var NotFound = fmt.Errorf("resource not found")
+type NotFound struct{ error }
+type HandlerPanicked struct{ error }

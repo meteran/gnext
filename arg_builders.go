@@ -1,6 +1,7 @@
 package gnext
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin/binding"
 	"io"
 	"reflect"
@@ -23,7 +24,7 @@ func stringParamBuilder(paramName string, optional bool) argBuilder {
 		return func(ctx *callContext) (reflect.Value, error) {
 			param := ctx.rawContext.Param(paramName)
 			if param == "" {
-				return reflect.Value{}, NotFound
+				return reflect.Value{}, &NotFound{fmt.Errorf("param '%s' does not exist", paramName)}
 			}
 			return reflect.ValueOf(param), nil
 		}
@@ -43,7 +44,7 @@ func intParamBuilder(paramName string, optional bool) argBuilder {
 		return func(ctx *callContext) (reflect.Value, error) {
 			number, err := strconv.Atoi(ctx.rawContext.Param(paramName))
 			if err != nil {
-				return reflect.Value{}, NotFound
+				return reflect.Value{}, &NotFound{fmt.Errorf("param '%s' does not exist or is not an integer", paramName)}
 			}
 			return reflect.ValueOf(number), nil
 		}

@@ -219,20 +219,23 @@ func (d *Docs) ResponseDefaultStatus(model interface{}) int {
 
 func (d *Docs) CreateResponses(model interface{}, errorModel interface{}) openapi3.Responses {
 	ret := openapi3.NewResponses()
+	delete(ret, "default")
 	schema := d.modelSchema(model)
-	content := openapi3.NewContentWithJSONSchema(schema)
+	response := &openapi3.ResponseRef{
+		Value: &openapi3.Response{Content: openapi3.NewContentWithJSONSchema(schema)},
+	}
 
-	codes := append(d.getStatusCodes(model), strconv.Itoa(d.ResponseDefaultStatus(model)))
+	defaultStatus := strconv.Itoa(d.ResponseDefaultStatus(model))
+
+	codes := append(d.getStatusCodes(model), defaultStatus)
 	for _, code := range codes {
-		ret[code] = &openapi3.ResponseRef{
-			Value: &openapi3.Response{Content: content},
-		}
+		ret[code] = response
 	}
 
 	if errorModel != nil {
 		errorSchema := d.modelSchema(errorModel)
 		errorContent := openapi3.NewContentWithJSONSchema(errorSchema)
-		errorCodes := d.getStatusCodes(model)
+		errorCodes := d.getStatusCodes(errorModel)
 		for _, code := range errorCodes {
 			ret[code] = &openapi3.ResponseRef{
 				Value: &openapi3.Response{Content: errorContent},
