@@ -2,6 +2,7 @@ package gnext
 
 import (
 	"reflect"
+	"runtime/debug"
 )
 
 func NewHandlerCaller(receiver reflect.Value) *HandlerCaller {
@@ -26,6 +27,15 @@ func (c *HandlerCaller) addBuilder(b argBuilder) {
 }
 
 func (c *HandlerCaller) call(ctx *callContext) {
+	defer func() {
+		if e := recover(); e != nil {
+			errValue := reflect.ValueOf(&HandlerPanicked{
+				Value:      e,
+				StackTrace: debug.Stack(),
+			})
+			ctx.error = &errValue
+		}
+	}()
 	values := make([]reflect.Value, len(c.argBuilders))
 	for i, builder := range c.argBuilders {
 		value, err := builder(ctx)

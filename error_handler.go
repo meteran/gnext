@@ -3,12 +3,15 @@ package gnext
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/go-playground/validator/v10"
 	"log"
 	"net/http"
+	"os"
 	"reflect"
 )
+
+var resetColor = "\033[0m"
+var errLog = log.New(os.Stderr, "\n\n\x1b[31m", log.LstdFlags)
 
 func DefaultErrorHandler(err error) (status Status, response *DefaultErrorResponse) {
 	status = 500
@@ -27,14 +30,6 @@ func DefaultErrorHandler(err error) (status Status, response *DefaultErrorRespon
 		response.Message = "invalid payload"
 		response.Details = []string{fmt.Sprintf("at position %d: invalid type of field '%s': was '%s', should be '%s'", e.Offset, e.Field, e.Value, e.Type.Name())}
 	case validator.ValidationErrors:
-		(&spew.ConfigState{
-			Indent:                  " ",
-			DisablePointerAddresses: true,
-			DisableCapacities:       true,
-			SortKeys:                true,
-			DisableMethods:          true,
-			MaxDepth:                2,
-		}).Dump(e[0])
 		status = http.StatusBadRequest
 		response.Message = "validation error"
 		for _, validationError := range e {
@@ -43,9 +38,12 @@ func DefaultErrorHandler(err error) (status Status, response *DefaultErrorRespon
 	case *NotFound:
 		status = http.StatusNotFound
 		response.Message = err.Error()
+	case *HandlerPanicked:
+		errLog.Printf("panic recovered: %v\n%s%s", e.Value, e.StackTrace, resetColor)
+		panic(e.Value)
 	default:
 		// TODO if debug mode then return `err.Error()` in message
-		log.Printf("unhandled error: %v", err)
+		errLog.Printf("unhandled error: %v%s", err, resetColor)
 	}
 	return
 }
