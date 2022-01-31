@@ -21,7 +21,7 @@ const (
 	Binding       = "binding"
 	Json          = "json"
 	DefaultStatus = "default_status"
-	Errors        = "errors"
+	StatusCodes   = "status_codes"
 )
 
 type PathDoc openapi3.Operation
@@ -194,12 +194,8 @@ func (d *Docs) ConvertModelToRequestBody(model interface{}, contentType string) 
 
 func (d *Docs) ResponseDefaultStatus(model interface{}) int {
 	type_ := reflect.TypeOf(model)
-	value_ := reflect.ValueOf(model)
 	if type_.Kind() == reflect.Ptr {
 		type_ = type_.Elem()
-	}
-	if value_.Kind() == reflect.Ptr {
-		value_ = value_.Elem()
 	}
 	if type_.Kind() == reflect.Struct {
 		for i := 0; i < type_.NumField(); i++ {
@@ -223,17 +219,23 @@ func (d *Docs) ResponseDefaultStatus(model interface{}) int {
 
 func (d *Docs) CreateResponses(model interface{}, errorModel interface{}) openapi3.Responses {
 	ret := openapi3.NewResponses()
+	delete(ret, "default")
 	schema := d.modelSchema(model)
-	content := openapi3.NewContentWithJSONSchema(schema)
-	ret[strconv.Itoa(d.ResponseDefaultStatus(model))] = &openapi3.ResponseRef{
-		Value: &openapi3.Response{
-			Content: content,
-		},
+	response := &openapi3.ResponseRef{
+		Value: &openapi3.Response{Content: openapi3.NewContentWithJSONSchema(schema)},
 	}
+
+	defaultStatus := strconv.Itoa(d.ResponseDefaultStatus(model))
+
+	codes := append(d.getStatusCodes(model), defaultStatus)
+	for _, code := range codes {
+		ret[code] = response
+	}
+
 	if errorModel != nil {
 		errorSchema := d.modelSchema(errorModel)
 		errorContent := openapi3.NewContentWithJSONSchema(errorSchema)
-		errorCodes := d.responseErrorCodes(model)
+		errorCodes := d.getStatusCodes(errorModel)
 		for _, code := range errorCodes {
 			ret[code] = &openapi3.ResponseRef{
 				Value: &openapi3.Response{Content: errorContent},
@@ -342,15 +344,11 @@ func (d *Docs) modelSchema(model interface{}) *openapi3.Schema {
 	return schema
 }
 
-func (d *Docs) responseErrorCodes(model interface{}) []string {
+func (d *Docs) getStatusCodes(model interface{}) []string {
 	var errorCodes []string
 	type_ := reflect.TypeOf(model)
-	value_ := reflect.ValueOf(model)
 	if type_.Kind() == reflect.Ptr {
 		type_ = type_.Elem()
-	}
-	if value_.Kind() == reflect.Ptr {
-		value_ = value_.Elem()
 	}
 	if type_.Kind() == reflect.Struct {
 		for i := 0; i < type_.NumField(); i++ {
@@ -359,7 +357,7 @@ func (d *Docs) responseErrorCodes(model interface{}) []string {
 			if err != nil {
 				panic(err)
 			}
-			errorCodesTag, err := tags.Get(Errors)
+			errorCodesTag, err := tags.Get(StatusCodes)
 			if err == nil {
 				codes := strings.Split(errorCodesTag.Value(), ",")
 				for _, code := range codes {
