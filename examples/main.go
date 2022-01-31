@@ -33,7 +33,6 @@ type Headers struct {
 
 func someHandler(param1 int, param2 string, query *Query, context *SomeContext, headers *Headers) (gnext.Status, *Response) { // NOTE: context comes from middleware
 	fmt.Printf("%v, %v, %v, %v, %v", param1, param2, query, context, headers)
-	panic("from handler")
 	return 200, &Response{
 		Id:   123,
 		Name: "hello world",
@@ -42,7 +41,6 @@ func someHandler(param1 int, param2 string, query *Query, context *SomeContext, 
 
 func innerHandler(request *Request, context *SomeContext, context2 *SomeContext2) *Response { // NOTE: both contexts come from middlewares
 	fmt.Printf("%v, %v, %v", request, context, context2)
-	panic(123)
 	return &Response{
 		Id:   0,
 		Name: "123",
