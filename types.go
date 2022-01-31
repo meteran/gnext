@@ -9,7 +9,9 @@ import (
 
 type IRouter interface {
 	IRoutes
+	RawRouter() gin.IRouter
 	Group(string, ...*docs.PathDoc) IRouter
+	OnError(handler interface{}) IRoutes
 }
 
 type IRoutes interface {
@@ -52,9 +54,9 @@ func (m Body) BodyDocs() {}
 type ErrorInterface interface {
 	ErrorDocs()
 }
-type Error struct{}
+type ErrorResponse struct{}
 
-func (m Error) ErrorDocs() {}
+func (m ErrorResponse) ErrorDocs() {}
 
 type ResponseInterface interface {
 	ResponseDocs()
@@ -83,3 +85,10 @@ type Middleware struct {
 }
 
 type MiddlewareFactory func() Middleware
+
+type DefaultErrorResponse struct {
+	ErrorResponse `status_codes:"4XX,5XX"`
+	Message       string   `json:"message"`
+	Details       []string `json:"details"`
+	Success       bool     `json:"success"`
+}

@@ -13,12 +13,13 @@ import (
 
 var paramRegExp = regexp.MustCompile(":[a-zA-Z0-9]+/")
 
-func WrapHandler(method string, path string, middlewares []Middleware, documentation *docs.Docs, handler interface{}, doc ...*docs.PathDoc) *HandlerWrapper {
+func WrapHandler(method string, path string, middlewares []Middleware, documentation *docs.Docs, handler, errorHandler interface{}, doc ...*docs.PathDoc) *HandlerWrapper {
 	wrapper := &HandlerWrapper{
 		method:          method,
 		path:            path,
 		middlewares:     middlewares,
 		originalHandler: handler,
+		errorHandler:    WrapErrorHandler(errorHandler),
 		docs:            documentation,
 		params:          newParameters(path),
 		valuesTypes:     map[reflect.Type]int{},
@@ -32,8 +33,9 @@ func WrapHandler(method string, path string, middlewares []Middleware, documenta
 	}
 
 	wrapper.init()
-	wrapper.fillDocumentation()
-
+	if wrapper.documentedRouter() {
+		wrapper.fillDocumentation()
+	}
 	return wrapper
 }
 
@@ -59,6 +61,7 @@ type HandlerWrapper struct {
 	originalHandler interface{}
 	handlersChain   []*HandlerCaller
 	pathParams      []reflect.Value
+	errorHandler    *ErrorHandlerCaller
 	valuesNum       int
 	valuesTypes     map[reflect.Type]int
 	queryType       reflect.Type
@@ -74,8 +77,11 @@ type HandlerWrapper struct {
 	defaultStatus   Status
 }
 
-func (w *HandlerWrapper) init() {
+func (w *HandlerWrapper) documentedRouter() bool {
+	return w.docs != nil
+}
 
+func (w *HandlerWrapper) init() {
 	for _, middleware := range w.middlewares {
 		if middleware.Before != nil {
 			w.chainHandler(middleware.Before, false)
@@ -92,35 +98,12 @@ func (w *HandlerWrapper) init() {
 	}
 }
 
-func (w *HandlerWrapper) fillDocumentation() {
-
-	w.doc.Tags = w.docs.PathTags(w.path)
-
-	if w.bodyType != nil {
-		bodyModel := w.docs.ConvertTypeToInterface(w.bodyType.Elem())
-		w.doc.RequestBody = w.docs.ConvertModelToRequestBody(bodyModel, "")
-	}
-
-	if w.responseType != nil {
-		responseModel := w.docs.ConvertTypeToInterface(w.responseType.Elem())
-		w.doc.Responses = w.docs.CreateResponses(responseModel, nil)
-		w.defaultStatus = Status(w.docs.ResponseDefaultStatus(responseModel))
-	}
-
-	if w.queryType != nil {
-		queryModel := w.docs.ConvertTypeToInterface(w.queryType.Elem())
-		w.docs.AddParametersToOperation(w.docs.ParseQueryParams(queryModel), (*openapi3.Operation)(w.doc))
-	}
-
-	w.docs.SetOperationOnPath(w.path, w.method, openapi3.Operation(*w.doc))
-}
-
 func (w *HandlerWrapper) chainHandler(handler interface{}, final bool) {
 	caller := NewHandlerCaller(reflect.ValueOf(handler))
 
 	ht := reflect.TypeOf(handler)
 	if ht.Kind() != reflect.Func {
-		panic("handler is not a function")
+		panic(fmt.Sprintf("'%s' is not a function", ht))
 	}
 
 	w.inspectInParams(ht, caller)
@@ -137,7 +120,9 @@ func (w *HandlerWrapper) inspectInParams(handlerType reflect.Type, caller *Handl
 		switch {
 		case w.isPathParam(arg):
 			w.addPathParamBuilder(caller, arg, paramIndex)
-			w.docs.AddParamToOperation(w.params.index(paramIndex), arg, (*openapi3.Operation)(w.doc))
+			if w.documentedRouter() {
+				w.docs.AddParamToOperation(w.params.index(paramIndex), arg, (*openapi3.Operation)(w.doc))
+			}
 			paramIndex++
 
 			continue
@@ -203,7 +188,7 @@ func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller *Hand
 		}
 
 		switch {
-		// final means, that it's the original handler
+		// `final` means, that it's the original handler
 		// in such case we consider any unknown returned object as a response
 		// just for developer convenience
 		case arg.Implements(responseInterfaceType) || final:
@@ -260,6 +245,29 @@ func (w *HandlerWrapper) addGenericBuilder(caller *HandlerCaller, argType reflec
 	caller.addBuilder(cached(genericBuilder(argType, bindType), w.valuesNum))
 }
 
+func (w *HandlerWrapper) fillDocumentation() {
+	w.doc.Tags = w.docs.PathTags(w.path)
+
+	if w.bodyType != nil {
+		bodyModel := w.docs.ConvertTypeToInterface(w.bodyType.Elem())
+		w.doc.RequestBody = w.docs.ConvertModelToRequestBody(bodyModel, "")
+	}
+
+	if w.responseType != nil {
+		responseModel := w.docs.ConvertTypeToInterface(w.responseType.Elem())
+		errorResponseModel := w.docs.ConvertTypeToInterface(w.errorHandler.responseType.Elem())
+		w.doc.Responses = w.docs.CreateResponses(responseModel, errorResponseModel)
+		w.defaultStatus = Status(w.docs.ResponseDefaultStatus(responseModel))
+	}
+
+	if w.queryType != nil {
+		queryModel := w.docs.ConvertTypeToInterface(w.queryType.Elem())
+		w.docs.AddParametersToOperation(w.docs.ParseQueryParams(queryModel), (*openapi3.Operation)(w.doc))
+	}
+
+	w.docs.SetOperationOnPath(w.path, w.method, openapi3.Operation(*w.doc))
+}
+
 func (w *HandlerWrapper) rawHandle(rawContext *gin.Context) {
 	context := &callContext{
 		rawContext: rawContext,
@@ -268,18 +276,18 @@ func (w *HandlerWrapper) rawHandle(rawContext *gin.Context) {
 	}
 
 	for _, caller := range w.handlersChain {
-		err := caller.call(context)
-		if err != nil {
+		caller.call(context)
+		if context.error != nil {
 			break
 		}
 	}
 
-	response := context.values[w.responseIndex]
 	if context.error != nil {
-		rawContext.AbortWithStatusJSON(http.StatusInternalServerError, context.error)
+		w.errorHandler.call(context)
 		return
 	}
 
+	response := context.values[w.responseIndex]
 	if response == nil {
 		rawContext.AbortWithStatus(int(context.status))
 		return
