@@ -28,11 +28,11 @@ type Query struct {
 
 type Headers struct {
 	gnext.Headers
-	Test string `form:"test"`
+	Test string `header:"test"`
 }
 
 func someHandler(param1 int, param2 string, query *Query, context *SomeContext, headers *Headers) (gnext.Status, *Response) { // NOTE: context comes from middleware
-	fmt.Printf("%v, %v, %v, %v, %v", param1, param2, query, context, headers)
+	fmt.Printf("%d, %s, %v, %v, %v", param1, param2, query, context, headers)
 	return 200, &Response{
 		Id:   123,
 		Name: "hello world",

@@ -150,6 +150,36 @@ func (d *Docs) AddParamToOperation(paramName string, paramType reflect.Type, ope
 	d.AddParametersToOperation(openapi3.Parameters{&parameter}, operation)
 }
 
+func (d *Docs) ParseHeaderParams(queryModel interface{}) openapi3.Parameters {
+	var params openapi3.Parameters
+
+	t := reflect.TypeOf(queryModel).Elem().Elem()
+	for i := 0; i < t.NumField(); i++ {
+		if t.Field(i).Tag.Get("header") != "" {
+			params = append(params, &openapi3.ParameterRef{
+				Value: &openapi3.Parameter{
+					Name:            t.Field(i).Tag.Get("header"),
+					In:              "header",
+					Description:     "",
+					Style:           "",
+					Explode:         nil,
+					AllowEmptyValue: false,
+					AllowReserved:   false,
+					Deprecated:      false,
+					Required:        false,
+					Schema:          nil,
+					Example:         nil,
+					Examples:        nil,
+					Content:         nil,
+				},
+			})
+		}
+	}
+
+	return params
+}
+
+
 func (d *Docs) ParseQueryParams(queryModel interface{}) openapi3.Parameters {
 	var params openapi3.Parameters
 
@@ -397,3 +427,5 @@ func (d *Docs) typeAsString(t reflect.Type) string {
 		panic(fmt.Sprintf("unknown type: %v in path params, must be integer or string", t.Kind()))
 	}
 }
+
+

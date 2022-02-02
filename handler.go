@@ -66,6 +66,7 @@ type HandlerWrapper struct {
 	valuesTypes     map[reflect.Type]int
 	queryType       reflect.Type
 	bodyType        reflect.Type
+	headerTypes     []reflect.Type
 	responseType    reflect.Type
 	docs            *docs.Docs
 	doc             *docs.PathDoc
@@ -146,6 +147,7 @@ func (w *HandlerWrapper) inspectInParams(handlerType reflect.Type, caller *Handl
 			w.setQueryType(arg)
 			w.addGenericBuilder(caller, arg, binding.Query)
 		case arg.Implements(headersInterfaceType):
+			w.appendHeadersType(arg)
 			w.addGenericBuilder(caller, arg, binding.Header)
 		default:
 			switch w.method {
@@ -200,6 +202,12 @@ func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller *Hand
 
 		w.valuesTypes[arg] = w.valuesNum
 		w.valuesNum++
+	}
+}
+
+func (w *HandlerWrapper) appendHeadersType(argType reflect.Type) {
+	if argType.Kind() != reflect.Map {
+		w.headerTypes = append(w.headerTypes, argType)
 	}
 }
 
@@ -263,6 +271,11 @@ func (w *HandlerWrapper) fillDocumentation() {
 	if w.queryType != nil {
 		queryModel := w.docs.ConvertTypeToInterface(w.queryType.Elem())
 		w.docs.AddParametersToOperation(w.docs.ParseQueryParams(queryModel), (*openapi3.Operation)(w.doc))
+	}
+
+	for _, headerType := range w.headerTypes {
+		headerModel := w.docs.ConvertTypeToInterface(headerType)
+		w.docs.AddParametersToOperation(w.docs.ParseHeaderParams(headerModel), (*openapi3.Operation)(w.doc))
 	}
 
 	w.docs.SetOperationOnPath(w.path, w.method, openapi3.Operation(*w.doc))
