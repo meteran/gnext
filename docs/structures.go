@@ -150,11 +150,11 @@ func (d *Docs) AddParamToOperation(paramName string, paramType reflect.Type, ope
 	d.AddParametersToOperation(openapi3.Parameters{&parameter}, operation)
 }
 
-func (d *Docs) ParseHeaderParams(headermodel interface{}) openapi3.Parameters {
+func (d *Docs) ParseHeaderParams(headerModel interface{}) openapi3.Parameters {
 	var params openapi3.Parameters
 	var hType reflect.Type
 
-	hType = reflect.TypeOf(headermodel).Elem()
+	hType = reflect.TypeOf(headerModel).Elem()
 	if hType.Kind() == reflect.Ptr{
 		hType = hType.Elem()
 	}
@@ -170,7 +170,7 @@ func (d *Docs) ParseHeaderParams(headermodel interface{}) openapi3.Parameters {
 					AllowEmptyValue: false,
 					AllowReserved:   false,
 					Deprecated:      false,
-					Required:        hType.Field(i).Tag.Get(Binding) == "required",
+					Required:        strings.Contains(hType.Field(i).Tag.Get(Binding), "required"),
 					Schema:          nil,
 					Example:         nil,
 					Examples:        nil,

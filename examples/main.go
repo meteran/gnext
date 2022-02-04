@@ -32,7 +32,7 @@ type Query struct {
 type Headers struct {
 	gnext.Headers
 	Test    string `header:"test"`
-	ReqTest string `header:"req_test" binding:"required"`
+	ReqTest string `header:"req_test" binding:"required,max=255"`
 }
 
 func someHandler(param1 int, param2 string, query *Query, context *SomeContext, headers *Headers) (gnext.Status, *Response) { // NOTE: context comes from middleware
