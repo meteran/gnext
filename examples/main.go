@@ -9,9 +9,12 @@ import (
 
 type Response struct {
 	gnext.Response `default_status:"200" status_codes:"201,202"`
-	Id             int    `json:"id"`
-	Name           string `json:"name"`
+	Id             int           `json:"id"`
+	Name           string        `json:"name"`
+	Test           interface{}   `json:"test"`
+	TestAny        []interface{} `json:"test_any"`
 }
+
 type Request struct {
 	gnext.Body        // optional if the handler has just one unknown type and method is POST/PUT/PATCH
 	Name       string `json:"name"`
@@ -28,7 +31,8 @@ type Query struct {
 
 type Headers struct {
 	gnext.Headers
-	Test string `header:"test"`
+	Test    string `header:"test"`
+	ReqTest string `header:"req_test" binding:"required"`
 }
 
 func someHandler(param1 int, param2 string, query *Query, context *SomeContext, headers *Headers) (gnext.Status, *Response) { // NOTE: context comes from middleware
