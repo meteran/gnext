@@ -150,6 +150,39 @@ func (d *Docs) AddParamToOperation(paramName string, paramType reflect.Type, ope
 	d.AddParametersToOperation(openapi3.Parameters{&parameter}, operation)
 }
 
+func (d *Docs) ParseHeaderParams(headerModel interface{}) openapi3.Parameters {
+	var params openapi3.Parameters
+	var hType reflect.Type
+
+	hType = reflect.TypeOf(headerModel).Elem()
+	if hType.Kind() == reflect.Ptr{
+		hType = hType.Elem()
+	}
+	for i := 0; i < hType.NumField(); i++ {
+		if hType.Field(i).Tag.Get("header") != "" {
+			params = append(params, &openapi3.ParameterRef{
+				Value: &openapi3.Parameter{
+					Name:            hType.Field(i).Tag.Get("header"),
+					In:              "header",
+					Description:     "",
+					Style:           "",
+					Explode:         nil,
+					AllowEmptyValue: false,
+					AllowReserved:   false,
+					Deprecated:      false,
+					Required:        strings.Contains(hType.Field(i).Tag.Get(Binding), "required"),
+					Schema:          nil,
+					Example:         nil,
+					Examples:        nil,
+					Content:         nil,
+				},
+			})
+		}
+	}
+
+	return params
+}
+
 func (d *Docs) ParseQueryParams(queryModel interface{}) openapi3.Parameters {
 	var params openapi3.Parameters
 
@@ -283,6 +316,7 @@ func (d *Docs) defaultModelSchema(model interface{}) *openapi3.Schema {
 	case *multipart.FileHeader:
 		schema = openapi3.NewStringSchema()
 		schema.Format = "binary"
+
 	case []*multipart.FileHeader:
 		schema = openapi3.NewArraySchema()
 		schema.Items = &openapi3.SchemaRef{
@@ -301,45 +335,49 @@ func (d *Docs) modelSchema(model interface{}) *openapi3.Schema {
 	type_ := reflect.TypeOf(model)
 	value_ := reflect.ValueOf(model)
 	schema := openapi3.NewObjectSchema()
-	if type_.Kind() == reflect.Ptr {
-		type_ = type_.Elem()
-	}
-	if value_.Kind() == reflect.Ptr {
-		value_ = value_.Elem()
-	}
-	if type_.Kind() == reflect.Struct {
-		for i := 0; i < type_.NumField(); i++ {
-			field := type_.Field(i)
-			value := value_.Field(i)
-			tags, err := structtag.Parse(string(field.Tag))
-			if err != nil {
-				panic(err)
-			}
-			if !value.CanInterface() {
-				continue
-			}
-			fieldSchema := d.defaultModelSchema(value.Interface())
-			bindingTag, err := tags.Get(Binding)
-			if err == nil {
-				if bindingTag.Name == "required" {
-					schema.Required = append(schema.Required, bindingTag.Name)
+	if type_ != nil {
+		if type_.Kind() == reflect.Ptr {
+			type_ = type_.Elem()
+		}
+		if value_.Kind() == reflect.Ptr {
+			value_ = value_.Elem()
+		}
+		if type_.Kind() == reflect.Struct {
+			for i := 0; i < type_.NumField(); i++ {
+				field := type_.Field(i)
+				value := value_.Field(i)
+				tags, err := structtag.Parse(string(field.Tag))
+				if err != nil {
+					panic(err)
+				}
+				if !value.CanInterface() {
+					continue
+				}
+				fieldSchema := d.defaultModelSchema(value.Interface())
+				bindingTag, err := tags.Get(Binding)
+				if err == nil {
+					if bindingTag.Name == "required" {
+						schema.Required = append(schema.Required, bindingTag.Name)
+					}
+				}
+				defaultTag, err := tags.Get(Default)
+				if err == nil {
+					fieldSchema.Default = defaultTag.Name
+				}
+
+				tag, err := tags.Get(Json)
+				if err == nil {
+					schema.Properties[tag.Name] = openapi3.NewSchemaRef("", fieldSchema)
 				}
 			}
-			defaultTag, err := tags.Get(Default)
-			if err == nil {
-				fieldSchema.Default = defaultTag.Name
-			}
-
-			tag, err := tags.Get(Json)
-			if err == nil {
-				schema.Properties[tag.Name] = openapi3.NewSchemaRef("", fieldSchema)
-			}
+		} else if type_.Kind() == reflect.Slice {
+			schema = openapi3.NewArraySchema()
+			schema.Items = &openapi3.SchemaRef{Value: d.modelSchema(reflect.New(type_.Elem()).Elem().Interface())}
+		} else {
+			schema = d.defaultModelSchema(model)
 		}
-	} else if type_.Kind() == reflect.Slice {
-		schema = openapi3.NewArraySchema()
-		schema.Items = &openapi3.SchemaRef{Value: d.modelSchema(reflect.New(type_.Elem()).Elem().Interface())}
 	} else {
-		schema = d.defaultModelSchema(model)
+		schema.Default = "any"
 	}
 	return schema
 }
