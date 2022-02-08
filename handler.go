@@ -12,7 +12,7 @@ import (
 
 var paramRegExp = regexp.MustCompile(":[a-zA-Z0-9]+/")
 
-func WrapHandler(method string, path string, middlewares []Middleware, documentation *docs.Docs, handler, errorHandler interface{}, doc ...*docs.PathDoc) *HandlerWrapper {
+func WrapHandler(method string, path string, middlewares []Middleware, documentation *docs.Docs, handler, errorHandler interface{}, doc ...*docs.Endpoint) *HandlerWrapper {
 	wrapper := &HandlerWrapper{
 		method:          method,
 		path:            path,
@@ -26,7 +26,7 @@ func WrapHandler(method string, path string, middlewares []Middleware, documenta
 	}
 
 	if len(doc) == 0 {
-		wrapper.doc = &docs.PathDoc{}
+		wrapper.doc = &docs.Endpoint{}
 	} else {
 		wrapper.doc = doc[0]
 	}
@@ -68,7 +68,7 @@ type HandlerWrapper struct {
 	headerTypes     []reflect.Type
 	responseType    reflect.Type
 	docs            *docs.Docs
-	doc             *docs.PathDoc
+	doc             *docs.Endpoint
 	method          string
 	path            string
 	middlewares     []Middleware

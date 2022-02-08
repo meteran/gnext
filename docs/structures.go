@@ -3,17 +3,10 @@ package docs
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/fatih/structtag"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin/binding"
-	"mime/multipart"
 	"os"
-	"reflect"
 	"regexp"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (
@@ -24,102 +17,6 @@ const (
 	DefaultStatusTag = "default_status"
 	StatusCodesTag   = "status_codes"
 )
-
-type PathDoc openapi3.Operation
-
-func (d *PathDoc) SetTagsFromPath(path string) {
-	pathNormalWords := strings.Split(path, "/")
-	for _, word := range pathNormalWords {
-		if !strings.Contains(word, ":") && word != "" {
-			d.Tags = append(d.Tags, word)
-		}
-	}
-}
-
-func (d *PathDoc) SetBodyType(bodyType reflect.Type) {
-	d.RequestBody = &openapi3.RequestBodyRef{
-		Value: &openapi3.RequestBody{
-			Required: true,
-			Content:  openapi3.NewContentWithSchema(modelSchema(bodyType), []string{binding.MIMEJSON}),
-		},
-	}
-}
-
-func (d *PathDoc) SetResponses(responseType reflect.Type, errorType reflect.Type) {
-	if len(d.Responses) == 0 {
-		d.Responses = openapi3.NewResponses()
-	}
-
-	delete(d.Responses, "default")
-	schema := modelSchema(responseType)
-	response := &openapi3.ResponseRef{
-		Value: &openapi3.Response{Content: openapi3.NewContentWithJSONSchema(schema)},
-	}
-
-	defaultStatus := strconv.Itoa(DefaultStatus(responseType))
-
-	codes := append(getStatusCodes(responseType), defaultStatus)
-	for _, code := range codes {
-		d.Responses[code] = response
-	}
-
-	if errorType != nil {
-		errorSchema := modelSchema(errorType)
-		errorContent := openapi3.NewContentWithJSONSchema(errorSchema)
-		for _, code := range getStatusCodes(errorType) {
-			d.Responses[code] = &openapi3.ResponseRef{
-				Value: &openapi3.Response{Content: errorContent},
-			}
-		}
-	}
-}
-
-func (d *PathDoc) SetQueryType(queryType reflect.Type) {
-	queryType = directType(queryType)
-
-	for i := 0; i < queryType.NumField(); i++ {
-		if name := queryType.Field(i).Tag.Get("form"); name != "" {
-			d.Parameters = append(d.Parameters, &openapi3.ParameterRef{
-				Value: &openapi3.Parameter{
-					Name: name,
-					In:   "query",
-				},
-			})
-		}
-	}
-}
-
-func (d *PathDoc) AddPathParam(name string, type_ reflect.Type) {
-	d.Parameters = append(d.Parameters, &openapi3.ParameterRef{
-		Value: &openapi3.Parameter{
-			Name:     name,
-			In:       "path",
-			Required: true,
-			Schema: &openapi3.SchemaRef{
-				Value: &openapi3.Schema{
-					Type: typeAsString(type_),
-				},
-			},
-		},
-	})
-}
-
-func (d *PathDoc) AddHeadersType(headerType reflect.Type) {
-	headerType = directType(headerType)
-
-	for i := 0; i < headerType.NumField(); i++ {
-		tag := headerType.Field(i).Tag
-		if name := tag.Get("header"); name != "" {
-			d.Parameters = append(d.Parameters, &openapi3.ParameterRef{
-				Value: &openapi3.Parameter{
-					Name:     name,
-					In:       HeaderTag,
-					Required: strings.Contains(tag.Get(BindingTag), "required"),
-				},
-			})
-		}
-	}
-}
 
 type Docs struct {
 	OpenAPIPath     string
@@ -168,7 +65,7 @@ func (d *Docs) OpenAPIContent() *openapi3.T {
 	return d.OpenAPI
 }
 
-func (d *Docs) SetPath(path string, method string, doc *PathDoc) {
+func (d *Docs) SetPath(path string, method string, doc *Endpoint) {
 	existingPathItem := d.PathItem(d.FixPath(path))
 	existingPathItem.SetOperation(method, (*openapi3.Operation)(doc))
 	if d.PathsIsEmpty() {
@@ -210,147 +107,4 @@ func (d *Docs) PathItem(path string) *openapi3.PathItem {
 		return &openapi3.PathItem{}
 	}
 	return pathItem
-}
-
-func DefaultStatus(type_ reflect.Type) int {
-	if type_.Kind() == reflect.Ptr {
-		type_ = type_.Elem()
-	}
-	if type_.Kind() == reflect.Struct {
-		for i := 0; i < type_.NumField(); i++ {
-			field := type_.Field(i)
-			strStatus, exists := field.Tag.Lookup(DefaultStatusTag)
-			if exists {
-				status, err := strconv.Atoi(strStatus)
-				if err != nil {
-					panic(fmt.Sprintf("cannot parse default http code to integer %v", err))
-				}
-				return status
-			}
-		}
-	}
-	return 200
-}
-
-func defaultModelSchema(type_ reflect.Type) *openapi3.Schema {
-	model := reflect.New(type_).Elem().Interface()
-	var schema *openapi3.Schema
-	var m float64
-	m = float64(0)
-	switch model.(type) {
-	case int, int8, int16:
-		schema = openapi3.NewIntegerSchema()
-	case uint, uint8, uint16:
-		schema = openapi3.NewIntegerSchema()
-		schema.Min = &m
-	case int32:
-		schema = openapi3.NewInt32Schema()
-	case uint32:
-		schema = openapi3.NewInt32Schema()
-		schema.Min = &m
-	case int64:
-		schema = openapi3.NewInt64Schema()
-	case uint64:
-		schema = openapi3.NewInt64Schema()
-		schema.Min = &m
-	case string:
-		schema = openapi3.NewStringSchema()
-	case time.Time:
-		schema = openapi3.NewDateTimeSchema()
-	case float32, float64:
-		schema = openapi3.NewFloat64Schema()
-	case bool:
-		schema = openapi3.NewBoolSchema()
-	case []byte:
-		schema = openapi3.NewBytesSchema()
-	case *multipart.FileHeader:
-		schema = openapi3.NewStringSchema()
-		schema.Format = "binary"
-
-	case []*multipart.FileHeader:
-		schema = openapi3.NewArraySchema()
-		schema.Items = &openapi3.SchemaRef{
-			Value: &openapi3.Schema{
-				Type:   "string",
-				Format: "binary",
-			},
-		}
-	default:
-		schema = modelSchema(type_)
-	}
-	return schema
-}
-
-func modelSchema(type_ reflect.Type) *openapi3.Schema {
-	type_ = directType(type_)
-
-	schema := openapi3.NewObjectSchema()
-	switch type_.Kind() {
-	case reflect.Struct:
-		for i := 0; i < type_.NumField(); i++ {
-			field := type_.Field(i)
-			tags, err := structtag.Parse(string(field.Tag))
-			if err != nil {
-				panic(err)
-			}
-			fieldSchema := defaultModelSchema(field.Type)
-			bindingTag, err := tags.Get(BindingTag)
-			if err == nil {
-				if bindingTag.Name == "required" {
-					schema.Required = append(schema.Required, bindingTag.Name)
-				}
-			}
-			defaultTag, err := tags.Get(DefaultTag)
-			if err == nil {
-				fieldSchema.Default = defaultTag.Name
-			}
-
-			tag, err := tags.Get(JsonTag)
-			if err == nil {
-				schema.Properties[tag.Name] = openapi3.NewSchemaRef("", fieldSchema)
-			}
-		}
-	case reflect.Slice:
-		schema = openapi3.NewArraySchema()
-		schema.Items = &openapi3.SchemaRef{Value: modelSchema(type_.Elem())}
-	case reflect.Map:
-		schema.Items = &openapi3.SchemaRef{Value: modelSchema(type_.Elem())}
-	case reflect.Interface:
-		schema.Default = "any"
-	default:
-		schema = defaultModelSchema(type_)
-	}
-	return schema
-}
-
-func getStatusCodes(type_ reflect.Type) []string {
-	var errorCodes []string
-	type_ = directType(type_)
-	if type_.Kind() == reflect.Struct {
-		for i := 0; i < type_.NumField(); i++ {
-			field := type_.Field(i)
-			if errorCodesTag, exists := field.Tag.Lookup(StatusCodesTag); exists {
-				errorCodes = append(errorCodes, strings.Split(errorCodesTag, ",")...)
-			}
-		}
-	}
-	return errorCodes
-}
-
-func typeAsString(t reflect.Type) string {
-	switch t.Kind() {
-	case reflect.Int:
-		return "integer"
-	case reflect.String:
-		return "string"
-	default:
-		panic(fmt.Sprintf("unknown type: %s in path params, must be integer or string", t))
-	}
-}
-
-func directType(t reflect.Type) reflect.Type {
-	if t.Kind() == reflect.Ptr {
-		return t.Elem()
-	}
-	return t
 }
