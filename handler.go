@@ -2,7 +2,6 @@ package gnext
 
 import (
 	"fmt"
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/meteran/gnext/docs"
@@ -122,7 +121,7 @@ func (w *HandlerWrapper) inspectInParams(handlerType reflect.Type, caller *Handl
 		case w.isPathParam(arg):
 			w.addPathParamBuilder(caller, arg, paramIndex)
 			if w.documentedRouter() {
-				w.docs.AddParamToOperation(w.params.index(paramIndex), arg, (*openapi3.Operation)(w.doc))
+				w.doc.AddPathParam(w.params.index(paramIndex), arg)
 			}
 			paramIndex++
 
@@ -254,31 +253,26 @@ func (w *HandlerWrapper) addGenericBuilder(caller *HandlerCaller, argType reflec
 }
 
 func (w *HandlerWrapper) fillDocumentation() {
-	w.doc.Tags = w.docs.PathTags(w.path)
+	w.doc.SetTagsFromPath(w.path)
 
 	if w.bodyType != nil {
-		bodyModel := w.docs.ConvertTypeToInterface(w.bodyType.Elem())
-		w.doc.RequestBody = w.docs.ConvertModelToRequestBody(bodyModel, "")
+		w.doc.SetBodyType(w.bodyType)
 	}
 
 	if w.responseType != nil {
-		responseModel := w.docs.ConvertTypeToInterface(w.responseType.Elem())
-		errorResponseModel := w.docs.ConvertTypeToInterface(w.errorHandler.responseType.Elem())
-		w.doc.Responses = w.docs.CreateResponses(responseModel, errorResponseModel)
-		w.defaultStatus = Status(w.docs.ResponseDefaultStatus(responseModel))
+		w.doc.SetResponses(w.responseType, w.errorHandler.responseType)
+		w.defaultStatus = Status(docs.DefaultStatus(w.responseType))
 	}
 
 	if w.queryType != nil {
-		queryModel := w.docs.ConvertTypeToInterface(w.queryType.Elem())
-		w.docs.AddParametersToOperation(w.docs.ParseQueryParams(queryModel), (*openapi3.Operation)(w.doc))
+		w.doc.SetQueryType(w.queryType)
 	}
 
 	for _, headerType := range w.headerTypes {
-		headerModel := w.docs.ConvertTypeToInterface(headerType)
-		w.docs.AddParametersToOperation(w.docs.ParseHeaderParams(headerModel), (*openapi3.Operation)(w.doc))
+		w.doc.AddHeadersType(headerType)
 	}
 
-	w.docs.SetOperationOnPath(w.path, w.method, openapi3.Operation(*w.doc))
+	w.docs.SetPath(w.path, w.method, w.doc)
 }
 
 func (w *HandlerWrapper) rawHandle(rawContext *gin.Context) {

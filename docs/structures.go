@@ -17,14 +17,109 @@ import (
 )
 
 const (
-	Default       = "default"
-	Binding       = "binding"
-	Json          = "json"
-	DefaultStatus = "default_status"
-	StatusCodes   = "status_codes"
+	DefaultTag       = "default"
+	BindingTag       = "binding"
+	HeaderTag        = "header"
+	JsonTag          = "json"
+	DefaultStatusTag = "default_status"
+	StatusCodesTag   = "status_codes"
 )
 
 type PathDoc openapi3.Operation
+
+func (d *PathDoc) SetTagsFromPath(path string) {
+	pathNormalWords := strings.Split(path, "/")
+	for _, word := range pathNormalWords {
+		if !strings.Contains(word, ":") && word != "" {
+			d.Tags = append(d.Tags, word)
+		}
+	}
+}
+
+func (d *PathDoc) SetBodyType(bodyType reflect.Type) {
+	d.RequestBody = &openapi3.RequestBodyRef{
+		Value: &openapi3.RequestBody{
+			Required: true,
+			Content:  openapi3.NewContentWithSchema(modelSchema(bodyType), []string{binding.MIMEJSON}),
+		},
+	}
+}
+
+func (d *PathDoc) SetResponses(responseType reflect.Type, errorType reflect.Type) {
+	if len(d.Responses) == 0 {
+		d.Responses = openapi3.NewResponses()
+	}
+
+	delete(d.Responses, "default")
+	schema := modelSchema(responseType)
+	response := &openapi3.ResponseRef{
+		Value: &openapi3.Response{Content: openapi3.NewContentWithJSONSchema(schema)},
+	}
+
+	defaultStatus := strconv.Itoa(DefaultStatus(responseType))
+
+	codes := append(getStatusCodes(responseType), defaultStatus)
+	for _, code := range codes {
+		d.Responses[code] = response
+	}
+
+	if errorType != nil {
+		errorSchema := modelSchema(errorType)
+		errorContent := openapi3.NewContentWithJSONSchema(errorSchema)
+		for _, code := range getStatusCodes(errorType) {
+			d.Responses[code] = &openapi3.ResponseRef{
+				Value: &openapi3.Response{Content: errorContent},
+			}
+		}
+	}
+}
+
+func (d *PathDoc) SetQueryType(queryType reflect.Type) {
+	queryType = directType(queryType)
+
+	for i := 0; i < queryType.NumField(); i++ {
+		if name := queryType.Field(i).Tag.Get("form"); name != "" {
+			d.Parameters = append(d.Parameters, &openapi3.ParameterRef{
+				Value: &openapi3.Parameter{
+					Name: name,
+					In:   "query",
+				},
+			})
+		}
+	}
+}
+
+func (d *PathDoc) AddPathParam(name string, type_ reflect.Type) {
+	d.Parameters = append(d.Parameters, &openapi3.ParameterRef{
+		Value: &openapi3.Parameter{
+			Name:     name,
+			In:       "path",
+			Required: true,
+			Schema: &openapi3.SchemaRef{
+				Value: &openapi3.Schema{
+					Type: typeAsString(type_),
+				},
+			},
+		},
+	})
+}
+
+func (d *PathDoc) AddHeadersType(headerType reflect.Type) {
+	headerType = directType(headerType)
+
+	for i := 0; i < headerType.NumField(); i++ {
+		tag := headerType.Field(i).Tag
+		if name := tag.Get("header"); name != "" {
+			d.Parameters = append(d.Parameters, &openapi3.ParameterRef{
+				Value: &openapi3.Parameter{
+					Name:     name,
+					In:       HeaderTag,
+					Required: strings.Contains(tag.Get(BindingTag), "required"),
+				},
+			})
+		}
+	}
+}
 
 type Docs struct {
 	OpenAPIPath     string
@@ -73,9 +168,9 @@ func (d *Docs) OpenAPIContent() *openapi3.T {
 	return d.OpenAPI
 }
 
-func (d *Docs) SetOperationOnPath(path string, method string, operation openapi3.Operation) {
+func (d *Docs) SetPath(path string, method string, doc *PathDoc) {
 	existingPathItem := d.PathItem(d.FixPath(path))
-	existingPathItem.SetOperation(method, &operation)
+	existingPathItem.SetOperation(method, (*openapi3.Operation)(doc))
 	if d.PathsIsEmpty() {
 		d.OpenAPI.Paths = make(openapi3.Paths)
 	}
@@ -117,129 +212,16 @@ func (d *Docs) PathItem(path string) *openapi3.PathItem {
 	return pathItem
 }
 
-func (d *Docs) AddParametersToOperation(params openapi3.Parameters, operation *openapi3.Operation) {
-	operation.Parameters = append(operation.Parameters, params...)
-}
-
-func (d *Docs) PathTags(path string) []string {
-	var tags []string
-
-	pathNormalWords := strings.Split(path, "/")
-	for _, word := range pathNormalWords {
-		if !strings.Contains(word, ":") && word != "" {
-			tags = append(tags, word)
-		}
-	}
-
-	return tags
-}
-
-func (d *Docs) AddParamToOperation(paramName string, paramType reflect.Type, operation *openapi3.Operation) {
-	var parameter openapi3.ParameterRef
-	parameter.Value = &openapi3.Parameter{
-		Name:     paramName,
-		In:       "path",
-		Required: true,
-		Schema: &openapi3.SchemaRef{
-			Value: &openapi3.Schema{
-				Type: d.typeAsString(paramType),
-			},
-		},
-	}
-
-	d.AddParametersToOperation(openapi3.Parameters{&parameter}, operation)
-}
-
-func (d *Docs) ParseHeaderParams(headerModel interface{}) openapi3.Parameters {
-	var params openapi3.Parameters
-	var hType reflect.Type
-
-	hType = reflect.TypeOf(headerModel).Elem()
-	if hType.Kind() == reflect.Ptr{
-		hType = hType.Elem()
-	}
-	for i := 0; i < hType.NumField(); i++ {
-		if hType.Field(i).Tag.Get("header") != "" {
-			params = append(params, &openapi3.ParameterRef{
-				Value: &openapi3.Parameter{
-					Name:            hType.Field(i).Tag.Get("header"),
-					In:              "header",
-					Description:     "",
-					Style:           "",
-					Explode:         nil,
-					AllowEmptyValue: false,
-					AllowReserved:   false,
-					Deprecated:      false,
-					Required:        strings.Contains(hType.Field(i).Tag.Get(Binding), "required"),
-					Schema:          nil,
-					Example:         nil,
-					Examples:        nil,
-					Content:         nil,
-				},
-			})
-		}
-	}
-
-	return params
-}
-
-func (d *Docs) ParseQueryParams(queryModel interface{}) openapi3.Parameters {
-	var params openapi3.Parameters
-
-	t := reflect.TypeOf(queryModel).Elem()
-	for i := 0; i < t.NumField(); i++ {
-		if t.Field(i).Tag.Get("form") != "" {
-			params = append(params, &openapi3.ParameterRef{
-				Value: &openapi3.Parameter{
-					Name:            t.Field(i).Tag.Get("form"),
-					In:              "query",
-					Description:     "",
-					Style:           "",
-					Explode:         nil,
-					AllowEmptyValue: false,
-					AllowReserved:   false,
-					Deprecated:      false,
-					Required:        false,
-					Schema:          nil,
-					Example:         nil,
-					Examples:        nil,
-					Content:         nil,
-				},
-			})
-		}
-	}
-
-	return params
-}
-
-func (d *Docs) ConvertModelToRequestBody(model interface{}, contentType string) *openapi3.RequestBodyRef {
-	body := &openapi3.RequestBodyRef{
-		Value: openapi3.NewRequestBody(),
-	}
-	schema := d.modelSchema(model)
-	body.Value.Required = true
-	if contentType == "" {
-		contentType = binding.MIMEJSON
-	}
-	body.Value.Content = openapi3.NewContentWithSchema(schema, []string{contentType})
-	return body
-}
-
-func (d *Docs) ResponseDefaultStatus(model interface{}) int {
-	type_ := reflect.TypeOf(model)
+func DefaultStatus(type_ reflect.Type) int {
 	if type_.Kind() == reflect.Ptr {
 		type_ = type_.Elem()
 	}
 	if type_.Kind() == reflect.Struct {
 		for i := 0; i < type_.NumField(); i++ {
 			field := type_.Field(i)
-			tags, err := structtag.Parse(string(field.Tag))
-			if err != nil {
-				panic(err)
-			}
-			defaultHttpCodeTag, err := tags.Get(DefaultStatus)
-			if err == nil {
-				status, err := strconv.Atoi(defaultHttpCodeTag.Name)
+			strStatus, exists := field.Tag.Lookup(DefaultStatusTag)
+			if exists {
+				status, err := strconv.Atoi(strStatus)
 				if err != nil {
 					panic(fmt.Sprintf("cannot parse default http code to integer %v", err))
 				}
@@ -250,40 +232,8 @@ func (d *Docs) ResponseDefaultStatus(model interface{}) int {
 	return 200
 }
 
-func (d *Docs) CreateResponses(model interface{}, errorModel interface{}) openapi3.Responses {
-	ret := openapi3.NewResponses()
-	delete(ret, "default")
-	schema := d.modelSchema(model)
-	response := &openapi3.ResponseRef{
-		Value: &openapi3.Response{Content: openapi3.NewContentWithJSONSchema(schema)},
-	}
-
-	defaultStatus := strconv.Itoa(d.ResponseDefaultStatus(model))
-
-	codes := append(d.getStatusCodes(model), defaultStatus)
-	for _, code := range codes {
-		ret[code] = response
-	}
-
-	if errorModel != nil {
-		errorSchema := d.modelSchema(errorModel)
-		errorContent := openapi3.NewContentWithJSONSchema(errorSchema)
-		errorCodes := d.getStatusCodes(errorModel)
-		for _, code := range errorCodes {
-			ret[code] = &openapi3.ResponseRef{
-				Value: &openapi3.Response{Content: errorContent},
-			}
-		}
-	}
-	return ret
-}
-
-func (d *Docs) ConvertTypeToInterface(t reflect.Type) interface{} {
-	p := reflect.New(t)
-	return p.Interface()
-}
-
-func (d *Docs) defaultModelSchema(model interface{}) *openapi3.Schema {
+func defaultModelSchema(type_ reflect.Type) *openapi3.Schema {
+	model := reflect.New(type_).Elem().Interface()
 	var schema *openapi3.Schema
 	var m float64
 	m = float64(0)
@@ -326,112 +276,81 @@ func (d *Docs) defaultModelSchema(model interface{}) *openapi3.Schema {
 			},
 		}
 	default:
-		schema = d.modelSchema(model)
+		schema = modelSchema(type_)
 	}
 	return schema
 }
 
-func (d *Docs) modelSchema(model interface{}) *openapi3.Schema {
-	type_ := reflect.TypeOf(model)
-	value_ := reflect.ValueOf(model)
+func modelSchema(type_ reflect.Type) *openapi3.Schema {
+	type_ = directType(type_)
+
 	schema := openapi3.NewObjectSchema()
-	if type_ != nil {
-		if type_.Kind() == reflect.Ptr {
-			type_ = type_.Elem()
-		}
-		if value_.Kind() == reflect.Ptr {
-			value_ = value_.Elem()
-		}
-		if type_.Kind() == reflect.Struct {
-			for i := 0; i < type_.NumField(); i++ {
-				field := type_.Field(i)
-				value := value_.Field(i)
-				tags, err := structtag.Parse(string(field.Tag))
-				if err != nil {
-					panic(err)
-				}
-				if !value.CanInterface() {
-					continue
-				}
-				fieldSchema := d.defaultModelSchema(value.Interface())
-				bindingTag, err := tags.Get(Binding)
-				if err == nil {
-					if bindingTag.Name == "required" {
-						schema.Required = append(schema.Required, bindingTag.Name)
-					}
-				}
-				defaultTag, err := tags.Get(Default)
-				if err == nil {
-					fieldSchema.Default = defaultTag.Name
-				}
-
-				tag, err := tags.Get(Json)
-				if err == nil {
-					schema.Properties[tag.Name] = openapi3.NewSchemaRef("", fieldSchema)
-				}
-			}
-		} else if type_.Kind() == reflect.Slice {
-			schema = openapi3.NewArraySchema()
-			schema.Items = &openapi3.SchemaRef{Value: d.modelSchema(reflect.New(type_.Elem()).Elem().Interface())}
-		} else {
-			schema = d.defaultModelSchema(model)
-		}
-	} else {
-		schema.Default = "any"
-	}
-	return schema
-}
-
-func (d *Docs) getStatusCodes(model interface{}) []string {
-	var errorCodes []string
-	type_ := reflect.TypeOf(model)
-	if type_.Kind() == reflect.Ptr {
-		type_ = type_.Elem()
-	}
-	if type_.Kind() == reflect.Struct {
+	switch type_.Kind() {
+	case reflect.Struct:
 		for i := 0; i < type_.NumField(); i++ {
 			field := type_.Field(i)
 			tags, err := structtag.Parse(string(field.Tag))
 			if err != nil {
 				panic(err)
 			}
-			errorCodesTag, err := tags.Get(StatusCodes)
+			fieldSchema := defaultModelSchema(field.Type)
+			bindingTag, err := tags.Get(BindingTag)
 			if err == nil {
-				codes := strings.Split(errorCodesTag.Value(), ",")
-				for _, code := range codes {
-					errorCodes = append(errorCodes, code)
+				if bindingTag.Name == "required" {
+					schema.Required = append(schema.Required, bindingTag.Name)
 				}
+			}
+			defaultTag, err := tags.Get(DefaultTag)
+			if err == nil {
+				fieldSchema.Default = defaultTag.Name
+			}
+
+			tag, err := tags.Get(JsonTag)
+			if err == nil {
+				schema.Properties[tag.Name] = openapi3.NewSchemaRef("", fieldSchema)
+			}
+		}
+	case reflect.Slice:
+		schema = openapi3.NewArraySchema()
+		schema.Items = &openapi3.SchemaRef{Value: modelSchema(type_.Elem())}
+	case reflect.Map:
+		schema.Items = &openapi3.SchemaRef{Value: modelSchema(type_.Elem())}
+	case reflect.Interface:
+		schema.Default = "any"
+	default:
+		schema = defaultModelSchema(type_)
+	}
+	return schema
+}
+
+func getStatusCodes(type_ reflect.Type) []string {
+	var errorCodes []string
+	type_ = directType(type_)
+	if type_.Kind() == reflect.Struct {
+		for i := 0; i < type_.NumField(); i++ {
+			field := type_.Field(i)
+			if errorCodesTag, exists := field.Tag.Lookup(StatusCodesTag); exists {
+				errorCodes = append(errorCodes, strings.Split(errorCodesTag, ",")...)
 			}
 		}
 	}
 	return errorCodes
 }
 
-func (d *Docs) cleanPathParam(param string) string {
-	wColon := strings.ReplaceAll(param, ":", "")
-	wSlash := strings.ReplaceAll(wColon, "/", "")
-	return wSlash
-}
-
-func (d *Docs) CORSConfig() *cors.Config {
-	if d.CORS == nil {
-		return &cors.Config{
-			AllowOrigins:     []string{"*"},
-			AllowMethods:     []string{"*"},
-			AllowHeaders:     []string{"*"},
-			AllowCredentials: true,
-		}
-	}
-	return d.CORS
-}
-
-func (d *Docs) typeAsString(t reflect.Type) string {
+func typeAsString(t reflect.Type) string {
 	switch t.Kind() {
 	case reflect.Int:
 		return "integer"
 	case reflect.String:
 		return "string"
 	default:
-		panic(fmt.Sprintf("unknown type: %v in path params, must be integer or string", t.Kind()))
+		panic(fmt.Sprintf("unknown type: %s in path params, must be integer or string", t))
 	}
+}
+
+func directType(t reflect.Type) reflect.Type {
+	if t.Kind() == reflect.Ptr {
+		return t.Elem()
+	}
+	return t
 }
