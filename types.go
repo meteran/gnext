@@ -10,22 +10,22 @@ import (
 type IRouter interface {
 	IRoutes
 	RawRouter() gin.IRouter
-	Group(string, ...*docs.PathDoc) IRouter
+	Group(string, ...*docs.Endpoint) IRouter
 	OnError(handler interface{}) IRoutes
 }
 
 type IRoutes interface {
 	Use(Middleware) IRoutes
 
-	Handle(string, string, interface{}, ...*docs.PathDoc) IRoutes
-	Any(string, interface{}, ...*docs.PathDoc) IRoutes
-	GET(string, interface{}, ...*docs.PathDoc) IRoutes
-	POST(string, interface{}, ...*docs.PathDoc) IRoutes
-	DELETE(string, interface{}, ...*docs.PathDoc) IRoutes
-	PATCH(string, interface{}, ...*docs.PathDoc) IRoutes
-	PUT(string, interface{}, ...*docs.PathDoc) IRoutes
-	OPTIONS(string, interface{}, ...*docs.PathDoc) IRoutes
-	HEAD(string, interface{}, ...*docs.PathDoc) IRoutes
+	Handle(string, string, interface{}, ...*docs.Endpoint) IRoutes
+	Any(string, interface{}, ...*docs.Endpoint) IRoutes
+	GET(string, interface{}, ...*docs.Endpoint) IRoutes
+	POST(string, interface{}, ...*docs.Endpoint) IRoutes
+	DELETE(string, interface{}, ...*docs.Endpoint) IRoutes
+	PATCH(string, interface{}, ...*docs.Endpoint) IRoutes
+	PUT(string, interface{}, ...*docs.Endpoint) IRoutes
+	OPTIONS(string, interface{}, ...*docs.Endpoint) IRoutes
+	HEAD(string, interface{}, ...*docs.Endpoint) IRoutes
 }
 
 type Status int
