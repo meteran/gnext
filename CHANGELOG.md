@@ -2,6 +2,14 @@
 
 ---
 
+## gNext v0.4.0 (22.02.2022) Latest
+
+  * [NEW] Required fields recognition
+  * [FIX] Maps in payloads
+  * [EDIT] Documentation creation refactoring
+
+---
+
 ## gNext v0.3.0 (06.02.2022) Latest
 
   * [NEW] Generate docs for headers
