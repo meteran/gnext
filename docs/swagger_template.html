@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>{{ .Title }} - Documentation</title>
+    <title>{{ .title }} - Documentation</title>
     <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@3/swagger-ui.css">
     <script src="https://unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js" charset="UTF-8"></script>
 </head>
@@ -10,7 +10,7 @@
 <div id="swagger-ui"></div>
 <script>
     const ui = SwaggerUIBundle({
-        url: "{{ .OpenAPIUrl}}",
+        url: "{{ .jsonUrl }}",
         dom_id: '#swagger-ui',
         presets: [
             SwaggerUIBundle.presets.apis,

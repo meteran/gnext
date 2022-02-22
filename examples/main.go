@@ -68,20 +68,11 @@ func dummyErrorHandler(err error) (gnext.Status, *ErrorResponse) {
 }
 
 func main() {
-	//router := gnext.Router()
-	router := gnext.DocumentedRouter(
-		&gdocs.Docs{
-			OpenAPIPath:    "/docs",
-			OpenAPIUrl:     "http://localhost:8080/docs/openapi.json",
-			Title:          "gNext",
-			Description:    "",
-			TermsOfService: "http://localhost/terms",
-			License:        nil,
-			Contact:        nil,
-			Version:        "1.0.0",
-			InMemory:       true,
-		},
-	)
+	router := gnext.Router(&gdocs.Options{
+		Title:       "My Project",
+		Description: "An Awesome project",
+		Servers:     []string{"http://example.com"},
+	})
 
 	router.Use(NewMiddleware(MiddlewareOptions{
 		startValue: 10,
@@ -100,7 +91,7 @@ func main() {
 	//router.Docs.AddServer("http://localhost:8080/")
 	//router.Docs.AddServer("https://api.test.com/v1")
 
-	err := router.Run("0.0.0.0:8080")
+	err := router.Run("0.0.0.0", "8080")
 	if err != nil {
 		panic(err)
 	}
