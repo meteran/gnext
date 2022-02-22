@@ -16,10 +16,11 @@ type Response struct {
 }
 
 type Request struct {
-	gnext.Body        // optional if the handler has just one unknown type and method is POST/PUT/PATCH
-	Name       string `json:"name"`
-	LastName   string `json:"last_name" binding:"required"`
-	Age        int    `json:"age"`
+	gnext.Body                // optional if the handler has just one unknown type and method is POST/PUT/PATCH
+	Name       string         `json:"name"`
+	LastName   string         `json:"last_name" binding:"required"`
+	Age        int            `json:"age"`
+	Things     map[string]int `json:"things" binding:"required"`
 }
 
 type Query struct {
@@ -86,7 +87,7 @@ func main() {
 		startValue: 10,
 	}))
 
-	router.GET("/asd/:id/:id2/asd", someHandler, &gdocs.PathDoc{Summary: "test"})
+	router.GET("/asd/:id/:id2/asd", someHandler, &gdocs.Endpoint{Summary: "test"})
 	router.POST("/header/:id/:id2/", someHandler)
 	group := router.Group("/prefix")
 	group.Use(NewMiddleware2(MiddlewareOptions{
