@@ -2,7 +2,13 @@
 
 ---
 
-## gNext v0.4.0 (22.02.2022) Latest
+## gNext v0.5.0 (23.02.2022) Latest
+
+  * [EDIT] Simpler router initialization with default options
+
+---
+
+## gNext v0.4.0 (22.02.2022)
 
   * [NEW] Required fields recognition
   * [FIX] Maps in payloads
@@ -10,7 +16,7 @@
 
 ---
 
-## gNext v0.3.0 (06.02.2022) Latest
+## gNext v0.3.0 (06.02.2022)
 
   * [NEW] Generate docs for headers
   * [NEW] Allow for any type (`interface{}`) in payloads
