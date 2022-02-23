@@ -1,7 +1,5 @@
 # gNext Web Framework
 
----
-
 [![Go Report Card](https://goreportcard.com/badge/github.com/meteran/gnext)](https://goreportcard.com/report/github.com/meteran/gnext)
 [![GoDoc](https://pkg.go.dev/badge/github.com/meteran/gnext?status.svg)](https://pkg.go.dev/github.com/meteran/gnext?tab=doc)
 [![Release](https://img.shields.io/github/release/meteran/gnext.svg?style=flat-square)](https://github.com/meteran/gnext/releases)
@@ -15,8 +13,6 @@ You can leave generic and boring stuff to gNext and purely focus on the business
 
 ## Contents
 
----
-
 - [gNext Web Framework](#gnext-web-framework)
     - [Contents](#contents)
     - [Installation](#installation)
@@ -24,8 +20,6 @@ You can leave generic and boring stuff to gNext and purely focus on the business
 
 
 ## Installation
-
----
 
 You can download gNext and install it in your project by running:
 
