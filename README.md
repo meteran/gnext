@@ -159,7 +159,7 @@ Using them the standard way is unpleasant, we have to write a piece of code in t
 
 But... Gnext will do it for us 🥳!
 
-Let's see, I'll add a new endpoint with parameter and add handler methods to it:
+Let's see, I'll add a new endpoint with parameter and add handler method to it:
 
 ```go
 func main() {
