@@ -157,9 +157,9 @@ First, we'll start with the parameters in the url.
 
 Using them the standard way is unpleasant, we have to write a piece of code in the handler method just to be able to use it knowing the type safely - not cool.
 
-but... Gnext will do it for us 🥳!
+But... Gnext will do it for us 🥳!
 
-Let's see, I'll add a new endpoint with parameters and add handler methods to it:
+Let's see, I'll add a new endpoint with parameter and add handler methods to it:
 
 ```go
 func main() {
