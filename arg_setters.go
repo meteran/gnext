@@ -11,7 +11,9 @@ func valueSetter(contextIndex int) argSetter {
 }
 
 func errorSetter(value *reflect.Value, ctx *callContext) {
-	ctx.error = value
+	if !value.IsNil() {
+		ctx.error = value
+	}
 }
 
 func headersSetter(optional bool) argSetter {
