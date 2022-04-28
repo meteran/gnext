@@ -6,6 +6,7 @@ func simpleRouter() {
 	r := gnext.Router()
 
 	r.POST("/example", handler)
+	r.GET("/shop/:name/", getShop)
 	_ = r.Run()
 }
 
@@ -20,4 +21,8 @@ type MyResponse struct {
 
 func handler(req *MyRequest) *MyResponse {
 	return &MyResponse{Result: req.Name}
+}
+
+func getShop(paramName string) *MyResponse {
+	return &MyResponse{Result: paramName}
 }
