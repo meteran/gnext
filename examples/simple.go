@@ -1,6 +1,9 @@
 package main
 
-import "github.com/meteran/gnext"
+import (
+	"github.com/meteran/gnext"
+	"net/http"
+)
 
 func simpleRouter() {
 	r := gnext.Router()
@@ -30,9 +33,11 @@ func handler(req *MyRequest) *MyResponse {
 }
 
 func getShop(paramName string, q *ShopQuery) *MyResponse {
-	return &MyResponse{Result: q.Search}
+	return &MyResponse{Result: paramName}
 }
 
-func getShopsList(q *ShopQuery) *MyResponse {
-	return &MyResponse{Result: q.Search}
+func getShopsList(q *ShopQuery) (*MyResponse, gnext.Status){
+	return nil, http.StatusNotFound
 }
+
+
