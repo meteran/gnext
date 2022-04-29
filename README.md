@@ -164,15 +164,15 @@ Let's see, I'll add a new endpoint with parameter and add handler method to it:
 
 ```go
 func main() {
-r := gnext.Router()
+    r := gnext.Router()
 
-r.POST("/example", handler)
-r.GET("/shops/:name/", getShop)
-_ = r.Run()
+    r.POST("/example", handler)
+    r.GET("/shops/:name/", getShop)
+    _ = r.Run()
 }
 
 func getShop(paramName string) *MyResponse {
-return &MyResponse{Result: paramName}
+    return &MyResponse{Result: paramName}
 }
 ```
 
@@ -210,21 +210,21 @@ Let's add some query parameter to our new shop list endpoint```/shops/```:
 
 ```go
 func main() {
-r := gnext.Router()
+    r := gnext.Router()
 
-r.POST("/example", handler)
-r.GET("/shops/", getShopsList)
-r.GET("/shops/:name/", getShop)
-_ = r.Run()
+    r.POST("/example", handler)
+    r.GET("/shops/", getShopsList)
+    r.GET("/shops/:name/", getShop)
+    _ = r.Run()
 }
 
 type ShopQuery struct {
-gnext.Query
-Search       string    `form:"search"`
+    gnext.Query
+    Search       string    `form:"search"`
 }
 
 func getShopsList(q *ShopQuery) *MyResponse {
-return &MyResponse{Result: q.Search}
+    return &MyResponse{Result: q.Search}
 }
 ```
 
@@ -260,7 +260,7 @@ Example:
 
 ```go
 func getShopsList(q *ShopQuery)(*MyResponse, gnext.Status) {
-return nil, http.StatusNotFound
+    return nil, http.StatusNotFound
 }
 ```
 
@@ -282,12 +282,12 @@ Look, I will add the headers structure and use it in the handler:
 
 ```go
 type MyHeaders struct {
-gnext.Headers
-Test    string `header:"test"`
+    gnext.Headers
+    Test    string `header:"test"`
 }
 
 func getShopsList(q *ShopQuery, h *MyHeaders) (*MyResponse, gnext.Status){
-return &MyResponse{Result: h.Test}, http.StatusOK
+    return &MyResponse{Result: h.Test}, http.StatusOK
 }
 ```
 
