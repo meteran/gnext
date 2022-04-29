@@ -23,6 +23,11 @@ type MyResponse struct {
 	Result string `json:"result"`
 }
 
+type MyHeaders struct {
+	gnext.Headers
+	Test    string `header:"test"`
+}
+
 type ShopQuery struct {
 	gnext.Query
 	Search       string    `form:"search"`
@@ -36,8 +41,8 @@ func getShop(paramName string, q *ShopQuery) *MyResponse {
 	return &MyResponse{Result: paramName}
 }
 
-func getShopsList(q *ShopQuery) (*MyResponse, gnext.Status){
-	return nil, http.StatusNotFound
+func getShopsList(q *ShopQuery, h *MyHeaders) (*MyResponse, gnext.Status){
+	return &MyResponse{Result: h.Test}, http.StatusOK
 }
 
 

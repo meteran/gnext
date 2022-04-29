@@ -91,7 +91,7 @@ import "github.com/meteran/gnext"
 
 func main() {
 	r := gnext.Router()
-	
+
 	r.POST("/example", handler)
 	_ = r.Run()
 }
@@ -110,7 +110,8 @@ func handler(req *MyRequest) *MyResponse {
 }
 ```
 
-Restart the server and visit the docs page. You can see that request and response of `POST /example` endpoint are documented. That's the real power!
+Restart the server and visit the docs page. You can see that request and response of `POST /example` endpoint are
+documented. That's the real power!
 
 The POST request without required `id` now fails with the validation error:
 
@@ -146,8 +147,7 @@ gives us the expected response:
 
 Congratulations! Now you are prepared for the fast forwarding development of your great API.
 
-_Note:_ all following sections will base on the program from this overview. 
-
+_Note:_ all following sections will base on the program from this overview.
 
 ## Url parameters
 
@@ -155,7 +155,8 @@ Okay, in the previous section we saw quick use, let's get to specific things �
 
 First, we'll start with the parameters in the url.
 
-Using them the standard way is unpleasant, we have to write a piece of code in the handler method just to be able to use it knowing the type safely - not cool.
+Using them the standard way is unpleasant, we have to write a piece of code in the handler method just to be able to use
+it knowing the type safely - not cool.
 
 But... Gnext will do it for us 🥳!
 
@@ -163,15 +164,15 @@ Let's see, I'll add a new endpoint with parameter and add handler method to it:
 
 ```go
 func main() {
-    r := gnext.Router()
+r := gnext.Router()
 
-    r.POST("/example", handler)
-    r.GET("/shops/:name/", getShop)
-    _ = r.Run()
+r.POST("/example", handler)
+r.GET("/shops/:name/", getShop)
+_ = r.Run()
 }
 
 func getShop(paramName string) *MyResponse {
-    return &MyResponse{Result: paramName}
+return &MyResponse{Result: paramName}
 }
 ```
 
@@ -184,41 +185,46 @@ curl -X 'GET' \
 ```
 
 the response will look like this:
+
 ```json
-{"result": "myownshop"}
+{
+  "result": "myownshop"
+}
 ```
 
-Cool, yeah? Let's take a look at http://localhost:8080/docs, but ... don't be surprised when 
+Cool, yeah? Let's take a look at http://localhost:8080/docs, but ... don't be surprised when
 
 you will see a documented endpoint ```/shops/{name}/```  ready to use straight from the Swagger interface 👏
 
-_Note_:  adding new parameters as arguments to the handler methods, keep the order in accordance with the parameters in the url.
+_Note_:  adding new parameters as arguments to the handler methods, keep the order in accordance with the parameters in
+the url.
 
 ## Query parameters
 
 Okay, let's move on to a topic with a similar problem as in the previous section - Query parameters.
 
-Exactly the same problem as with url parameters, to use them we have to add a piece of code, but why not use the magic of gNext 🎩?
+Exactly the same problem as with url parameters, to use them we have to add a piece of code, but why not use the magic
+of gNext 🎩?
 
 Let's add some query parameter to our new shop list endpoint```/shops/```:
 
 ```go
 func main() {
-    r := gnext.Router()
+r := gnext.Router()
 
-    r.POST("/example", handler)
-    r.GET("/shops/", getShopsList)
-    r.GET("/shops/:name/", getShop)
-    _ = r.Run()
+r.POST("/example", handler)
+r.GET("/shops/", getShopsList)
+r.GET("/shops/:name/", getShop)
+_ = r.Run()
 }
 
 type ShopQuery struct {
-    gnext.Query
-    Search       string    `form:"search"`
+gnext.Query
+Search       string    `form:"search"`
 }
 
 func getShopsList(q *ShopQuery) *MyResponse {
-    return &MyResponse{Result: q.Search}
+return &MyResponse{Result: q.Search}
 }
 ```
 
@@ -231,6 +237,7 @@ curl -X 'GET' \
 ```
 
 the response will look like this:
+
 ```json
 {
   "result": "wantedshop"
@@ -253,11 +260,11 @@ Example:
 
 ```go
 func getShopsList(q *ShopQuery)(*MyResponse, gnext.Status) {
-  return nil, http.StatusNotFound
+return nil, http.StatusNotFound
 }
 ```
 
-Ok, now restart the server and use a new endpoint:
+Ok, now restart the server and use endpoint:
 
 ```shell
 curl -X 'GET' \
@@ -268,6 +275,40 @@ curl -X 'GET' \
 And the response status we will be ```404``` 🦾
 
 ## Request headers
+
+It happens that we want to do something with the request `Headers` - nothing difficult.
+
+Look, I will add the headers structure and use it in the handler:
+
+```go
+type MyHeaders struct {
+gnext.Headers
+Test    string `header:"test"`
+}
+
+func getShopsList(q *ShopQuery, h *MyHeaders) (*MyResponse, gnext.Status){
+return &MyResponse{Result: h.Test}, http.StatusOK
+}
+```
+
+Ok, now restart the server and use endpoint:
+
+```shell
+curl -X 'GET' \
+  'http://localhost:8080/shops/' \
+  -H 'accept: application/json' \
+  -H 'test: myownheadervalue'
+```
+
+the response will look like this:
+
+```json
+{
+  "result": "myownheadervalue"
+}
+```
+
+It's all simple isn't it? Of course you can enter headers in the Swagger interface 🫡 
 
 ## Response headers
 
