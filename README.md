@@ -166,7 +166,7 @@ func main() {
     r := gnext.Router()
 
     r.POST("/example", handler)
-    r.GET("/shop/:name/", getShop)
+    r.GET("/shops/:name/", getShop)
     _ = r.Run()
 }
 
@@ -179,7 +179,7 @@ Ok, now restart the server and use a new endpoint:
 
 ```shell
 curl -X 'GET' \
-  'http://localhost:8080/shop/myownshop/' \
+  'http://localhost:8080/shops/myownshop/' \
   -H 'accept: application/json'
 ```
 
@@ -190,11 +190,54 @@ the response will look like this:
 
 Cool, yeah? Let's take a look at http://localhost:8080/docs, but ... don't be surprised when 
 
-you will see a documented endpoint ```/shop/{name}/```  ready to use straight from the Swagger interface 👏
+you will see a documented endpoint ```/shops/{name}/```  ready to use straight from the Swagger interface 👏
 
 _Note_:  adding new parameters as arguments to the handler methods, keep the order in accordance with the parameters in the url.
 
 ## Query parameters
+
+Okay, let's move on to a topic with a similar problem as in the previous section - Query parameters.
+
+Exactly the same problem as with url parameters, to use them we have to add a piece of code, but why not use the magic of gNext 🎩?
+
+Let's add some query parameter to our new shop list endpoint```/shops/```:
+
+```go
+func main() {
+    r := gnext.Router()
+
+    r.POST("/example", handler)
+    r.GET("/shops/", getShopsList)
+    r.GET("/shops/:name/", getShop)
+    _ = r.Run()
+}
+
+type ShopQuery struct {
+    gnext.Query
+    Search       string    `form:"search"`
+}
+
+func getShopsList(q *ShopQuery) *MyResponse {
+    return &MyResponse{Result: q.Search}
+}
+```
+
+Ok, now restart the server and use a new endpoint:
+
+```shell
+curl -X 'GET' \
+  'http://localhost:8080/shops/?search=wantedshop' \
+  -H 'accept: application/json'
+```
+
+the response will look like this:
+```json
+{
+  "result": "wantedshop"
+}
+```
+
+As before, in the documentation we find a new endpoint ready to be used by the interface 👷‍♀️
 
 ## Request payload
 
