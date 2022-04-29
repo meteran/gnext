@@ -25,12 +25,12 @@ type MyResponse struct {
 
 type MyHeaders struct {
 	gnext.Headers
-	Test    string `header:"test"`
+	ContentType string `header:"Content-Type,default=application/json"`
 }
 
 type ShopQuery struct {
 	gnext.Query
-	Search       string    `form:"search"`
+	Search string `form:"search"`
 }
 
 func handler(req *MyRequest) *MyResponse {
@@ -41,8 +41,6 @@ func getShop(paramName string, q *ShopQuery) *MyResponse {
 	return &MyResponse{Result: paramName}
 }
 
-func getShopsList(q *ShopQuery, h *MyHeaders) (*MyResponse, gnext.Status){
-	return &MyResponse{Result: h.Test}, http.StatusOK
+func getShopsList(q *ShopQuery, h *MyHeaders) (*MyResponse, gnext.Status) {
+	return &MyResponse{Result: h.ContentType}, http.StatusOK
 }
-
-

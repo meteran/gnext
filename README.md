@@ -283,11 +283,11 @@ Look, I will add the headers structure and use it in the handler:
 ```go
 type MyHeaders struct {
     gnext.Headers
-    Test    string `header:"test"`
+    ContentType string `header:"Content-Type,default=application/json"`
 }
 
 func getShopsList(q *ShopQuery, h *MyHeaders) (*MyResponse, gnext.Status){
-    return &MyResponse{Result: h.Test}, http.StatusOK
+    return &MyResponse{Result: h.ContentType}, http.StatusOK
 }
 ```
 
@@ -296,15 +296,14 @@ Ok, now restart the server and use endpoint:
 ```shell
 curl -X 'GET' \
   'http://localhost:8080/shops/' \
-  -H 'accept: application/json' \
-  -H 'test: myownheadervalue'
+  -H 'accept: application/json'
 ```
 
 the response will look like this:
 
 ```json
 {
-  "result": "myownheadervalue"
+  "result": "application/json"
 }
 ```
 
