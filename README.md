@@ -215,9 +215,9 @@ func main() {
     r := gnext.Router()
 
     r.POST("/example", handler)
-  r.GET("/shops/", getShopsList)
-  r.GET("/shops/:name/", getShop)
-  _ = r.Run()
+    r.GET("/shops/", getShopsList)
+    r.GET("/shops/:name/", getShop)
+    _ = r.Run()
 }
 
 type ShopQuery struct {
