@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/meteran/gnext"
 	"net/http"
 )
@@ -41,6 +42,6 @@ func getShop(paramName string, q *ShopQuery) *MyResponse {
 	return &MyResponse{Result: paramName}
 }
 
-func getShopsList(q *ShopQuery, h *MyHeaders) (*MyResponse, gnext.Status) {
-	return &MyResponse{Result: h.ContentType}, http.StatusOK
+func getShopsList(c *gin.Context, q *ShopQuery, h *MyHeaders) (*MyResponse, gnext.Status){
+	return &MyResponse{Result: c.Request.Method}, http.StatusOK
 }

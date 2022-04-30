@@ -313,6 +313,31 @@ It's all simple isn't it? Of course you can enter headers in the Swagger interfa
 
 ## Request context
 
+It may happen that we need to get directly to the request context, just add ```*gin.Context``` to the arguments of the handler method.
+
+Let's look at an example:
+```go
+func getShopsList(c *gin.Context, q *ShopQuery, h *MyHeaders) (*MyResponse, gnext.Status){
+    return &MyResponse{Result: c.Request.Method}, http.StatusOK
+}
+```
+
+Ok, now restart the server and use endpoint:
+
+```shell
+curl -X 'GET' \
+  'http://localhost:8080/shops/' \
+  -H 'accept: application/json'
+```
+
+the response will look like this:
+
+```json
+{
+  "result": "GET"
+}
+```
+
 ## Endpoint groups
 
 ## Middleware

@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/getkin/kin-openapi v0.88.0 // indirect
+	github.com/gin-gonic/gin v1.7.7 // indirect
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-playground/validator/v10 v10.10.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
@@ -19,6 +20,4 @@ require (
 	google.golang.org/protobuf v1.27.1 // indirect
 )
 
-replace (
-	github.com/meteran/gnext v0.1.0 => ../
-)
+replace github.com/meteran/gnext v0.1.0 => ../
