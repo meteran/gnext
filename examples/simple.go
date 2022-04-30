@@ -10,8 +10,9 @@ func simpleRouter() {
 	r := gnext.Router()
 
 	r.POST("/example", handler)
-	r.GET("/shops/", getShopsList)
-	r.GET("/shops/:name/", getShop)
+	r.Group("/shops").
+		GET("/", getShopsList).
+		GET("/:name/", getShop)
 	_ = r.Run()
 }
 
@@ -42,6 +43,6 @@ func getShop(paramName string, q *ShopQuery) *MyResponse {
 	return &MyResponse{Result: paramName}
 }
 
-func getShopsList(c *gin.Context, q *ShopQuery, h *MyHeaders) (*MyResponse, gnext.Status){
+func getShopsList(c *gin.Context, q *ShopQuery, h *MyHeaders) (*MyResponse, gnext.Status) {
 	return &MyResponse{Result: c.Request.Method}, http.StatusOK
 }

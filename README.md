@@ -27,7 +27,9 @@ and purely focus on the business logic of your code.
     - [Middleware](#middleware)
     - [Error handler](#error-handler)
     - [Router options](#router-options)
+    - [Benchmarks](#benchmarks)
     - [Advanced documentation](#advanced-documentation)
+    - [Authors](#authors)
 
 ## Installation
 
@@ -213,14 +215,14 @@ func main() {
     r := gnext.Router()
 
     r.POST("/example", handler)
-    r.GET("/shops/", getShopsList)
-    r.GET("/shops/:name/", getShop)
-    _ = r.Run()
+  r.GET("/shops/", getShopsList)
+  r.GET("/shops/:name/", getShop)
+  _ = r.Run()
 }
 
 type ShopQuery struct {
-    gnext.Query
-    Search       string    `form:"search"`
+  gnext.Query
+  Search       string    `form:"search"`
 }
 
 func getShopsList(q *ShopQuery) *MyResponse {
@@ -282,8 +284,8 @@ Look, I will add the headers structure and use it in the handler:
 
 ```go
 type MyHeaders struct {
-    gnext.Headers
-    ContentType string `header:"Content-Type,default=application/json"`
+  gnext.Headers
+  ContentType string `header:"Content-Type,default=application/json"`
 }
 
 func getShopsList(q *ShopQuery, h *MyHeaders) (*MyResponse, gnext.Status){
@@ -307,15 +309,17 @@ the response will look like this:
 }
 ```
 
-It's all simple isn't it? Of course you can enter headers in the Swagger interface 🫡 
+It's all simple isn't it? Of course you can enter headers in the Swagger interface 🫡
 
 ## Response headers
 
 ## Request context
 
-It may happen that we need to get directly to the request context, just add ```*gin.Context``` to the arguments of the handler method.
+It may happen that we need to get directly to the request context, just add ```*gin.Context``` to the arguments of the
+handler method.
 
 Let's look at an example:
+
 ```go
 func getShopsList(c *gin.Context, q *ShopQuery, h *MyHeaders) (*MyResponse, gnext.Status){
     return &MyResponse{Result: c.Request.Method}, http.StatusOK
@@ -340,11 +344,37 @@ the response will look like this:
 
 ## Endpoint groups
 
+As in the standard GinGonic and many frameworks, we support Endpoint Groups.
+
+We use them not only for structuring, we can also add gnext middleware or gnext error handler to them.
+
+Let's look at a simple example to create a group:
+
+```go
+func main() {
+  r := gnext.Router()
+  
+  r.POST("/example", handler)
+  r.Group("/shops").
+    GET("/", getShopsList).
+    GET("/:name/", getShop)
+  _ = r.Run()
+}
+```
+
+Okay, now we can restart the server using the previously created endpoints in exactly the same way.
+
+_Note_: using middleware and error handler for the group will be presented in their individual documentation sections.
+
 ## Middleware
 
 ## Error handler
 
 ## Router options
 
+## Benchmarks
+
 ## Advanced documentation
+
+## Authors
 
