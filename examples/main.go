@@ -67,7 +67,7 @@ func dummyErrorHandler(err error) (gnext.Status, *ErrorResponse) {
 	return 200, &ErrorResponse{Message: err.Error(), Success: true}
 }
 
-func main() {
+func fullRouter() {
 	router := gnext.Router(&gdocs.Options{
 		Title:       "My Project",
 		Description: "An Awesome project",
@@ -95,4 +95,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func main() {
+	simpleRouter()
 }

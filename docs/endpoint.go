@@ -99,8 +99,8 @@ func (e *Endpoint) AddHeadersType(headerType reflect.Type) {
 			e.Parameters = append(e.Parameters, &openapi3.ParameterRef{
 				Value: &openapi3.Parameter{
 					Name:     name,
-					In:       HeaderTag,
-					Required: strings.Contains(tag.Get(BindingTag), "required"),
+					In:       headerTag,
+					Required: strings.Contains(tag.Get(bindingTag), "required"),
 				},
 			})
 		}
@@ -114,7 +114,7 @@ func DefaultStatus(type_ reflect.Type) int {
 	if type_.Kind() == reflect.Struct {
 		for i := 0; i < type_.NumField(); i++ {
 			field := type_.Field(i)
-			strStatus, exists := field.Tag.Lookup(DefaultStatusTag)
+			strStatus, exists := field.Tag.Lookup(defaultStatusTag)
 			if exists {
 				status, err := strconv.Atoi(strStatus)
 				if err != nil {
@@ -187,14 +187,14 @@ func modelSchema(type_ reflect.Type) *openapi3.Schema {
 			tags := field.Tag
 			fieldSchema := defaultModelSchema(field.Type)
 
-			fieldName, exists := tags.Lookup(JsonTag)
+			fieldName, exists := tags.Lookup(jsonTag)
 			if !exists {
 				continue
 			}
 
 			schema.Properties[fieldName] = openapi3.NewSchemaRef("", fieldSchema)
 
-			bindingTag, exists := tags.Lookup(BindingTag)
+			bindingTag, exists := tags.Lookup(bindingTag)
 			if exists {
 				for _, validation := range strings.Split(bindingTag, ",") {
 					if validation == "required" {
@@ -203,7 +203,7 @@ func modelSchema(type_ reflect.Type) *openapi3.Schema {
 				}
 			}
 
-			defaultValue, exists := tags.Lookup(DefaultTag)
+			defaultValue, exists := tags.Lookup(defaultTag)
 			if exists {
 				fieldSchema.Default = defaultValue
 			}
@@ -228,7 +228,7 @@ func getStatusCodes(type_ reflect.Type) []string {
 	if type_.Kind() == reflect.Struct {
 		for i := 0; i < type_.NumField(); i++ {
 			field := type_.Field(i)
-			if errorCodesTag, exists := field.Tag.Lookup(StatusCodesTag); exists {
+			if errorCodesTag, exists := field.Tag.Lookup(statusCodesTag); exists {
 				errorCodes = append(errorCodes, strings.Split(errorCodesTag, ",")...)
 			}
 		}

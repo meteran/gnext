@@ -33,14 +33,14 @@ func DefaultErrorHandler(err error) (status Status, response *DefaultErrorRespon
 		status = http.StatusBadRequest
 		response.Message = "validation error"
 		for _, validationError := range e {
-			response.Details = append(response.Details, validationError.Error())
+			response.Details = append(response.Details, fmt.Sprintf("field validation for '%s' failed on the '%s' tag with value '%s'",
+				validationError.Field(), validationError.ActualTag(), validationError.Param()))
 		}
 	case *NotFound:
 		status = http.StatusNotFound
 		response.Message = err.Error()
 	case *HandlerPanicked:
 		errLog.Printf("panic recovered: %v\n%s%s", e.Value, e.StackTrace, resetColor)
-		panic(e.Value)
 	default:
 		// TODO if debug mode then return `err.Error()` in message
 		errLog.Printf("unhandled error: %v%s", err, resetColor)

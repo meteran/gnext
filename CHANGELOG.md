@@ -2,7 +2,16 @@
 
 ---
 
-## gNext v0.5.0 (23.02.2022) Latest
+## gNext v0.6.0 (01.05.2022) Latest
+
+  * [FIX] Handler without response body
+  * [FIX] Error value setter
+  * [EDIT] `RootRouter` interface, raw router is now accesible
+  * [EDIT] Extend documentation
+
+---
+
+## gNext v0.5.0 (23.02.2022)
 
   * [EDIT] Simpler router initialization with default options
 
