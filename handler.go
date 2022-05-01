@@ -22,6 +22,7 @@ func WrapHandler(method string, path string, middlewares []Middleware, documenta
 		docs:            documentation,
 		params:          newParameters(path),
 		valuesTypes:     map[reflect.Type]int{},
+		responseIndex:   -1,
 		defaultStatus:   200,
 	}
 
@@ -275,7 +276,7 @@ func (w *HandlerWrapper) fillDocumentation() {
 	w.docs.SetPath(w.path, w.method, w.doc)
 }
 
-func (w *HandlerWrapper) rawHandle(rawContext *gin.Context) {
+func (w *HandlerWrapper) requestHandler(rawContext *gin.Context) {
 	context := &callContext{
 		rawContext: rawContext,
 		values:     make([]*reflect.Value, w.valuesNum),
@@ -300,4 +301,33 @@ func (w *HandlerWrapper) rawHandle(rawContext *gin.Context) {
 		return
 	}
 	rawContext.JSON(int(context.status), response.Interface())
+}
+
+func (w *HandlerWrapper) withoutResponseRequestHandler(rawContext *gin.Context) {
+	context := &callContext{
+		rawContext: rawContext,
+		values:     make([]*reflect.Value, w.valuesNum),
+		status:     w.defaultStatus,
+	}
+
+	for _, caller := range w.handlersChain {
+		caller.call(context)
+		if context.error != nil {
+			break
+		}
+	}
+
+	if context.error != nil {
+		w.errorHandler.call(context)
+		return
+	}
+
+	rawContext.AbortWithStatus(int(context.status))
+}
+
+func (w *HandlerWrapper) getHandler() gin.HandlerFunc {
+	if w.responseIndex < 0 {
+		return w.withoutResponseRequestHandler
+	}
+	return w.requestHandler
 }

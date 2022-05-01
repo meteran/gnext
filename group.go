@@ -56,7 +56,7 @@ func (g *routerGroup) POST(path string, handler interface{}, doc ...*docs.Endpoi
 
 func (g *routerGroup) Handle(method string, path string, handler interface{}, doc ...*docs.Endpoint) IRoutes {
 	wrapper := WrapHandler(method, g.fullPath(path), g.middlewares, g.Docs, handler, g.errorHandler, doc...)
-	g.rawRouter.Handle(method, path, wrapper.rawHandle)
+	g.rawRouter.Handle(method, path, wrapper.getHandler())
 	return g
 }
 

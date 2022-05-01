@@ -5,15 +5,24 @@ import (
 )
 
 const (
-	DefaultTag       = "default"
-	BindingTag       = "binding"
-	HeaderTag        = "header"
-	JsonTag          = "json"
-	DefaultStatusTag = "default_status"
-	StatusCodesTag   = "status_codes"
-	NoUrl            = "-"
+	defaultTag       = "default"
+	bindingTag       = "binding"
+	headerTag        = "header"
+	jsonTag          = "json"
+	defaultStatusTag = "default_status"
+	statusCodesTag   = "status_codes"
 )
 
+const (
+	// NoUrl is used to recognize whether the url should be cleared/ignored or initialized with the default value.
+	// If one of the urls in Options won't be filled, the default value will be used for it.
+	// If you need to disable some url, use NoUrl.
+	NoUrl = "-"
+)
+
+// Options is used to initialize the documentation for new router.
+// It simplifies some of the OpenAPI options like Servers or Tags.
+// If you have some complex, custom configuration and need more control over your docs, you can update Docs.OpenApi directly.
 type Options struct {
 	// ExtensionProps OpenAPI extensions.
 	// It reads/writes all properties with prefix "x-".
