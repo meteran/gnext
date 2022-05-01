@@ -6,7 +6,7 @@
 
   * [FIX] Handler without response body
   * [FIX] Error value setter
-  * [EDIT] `RootRouter` interface, raw router is now accesible
+  * [EDIT] `RootRouter` interface, raw router is now accessible
   * [EDIT] Extend documentation
 
 ---
