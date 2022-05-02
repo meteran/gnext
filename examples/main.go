@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/meteran/gnext"
 	gdocs "github.com/meteran/gnext/docs"
-	"log"
 )
 
 type Response struct {
@@ -52,20 +51,20 @@ func innerHandler(request *Request, context *SomeContext, context2 *SomeContext2
 	}
 }
 
-type ErrorResponse struct {
-	gnext.ErrorResponse `status_codes:"400,401,403,409,422"`
-	Message             string `json:"message"`
-	Success             bool   `json:"success"`
-}
-
-func dummyErrorHandler(err error) (gnext.Status, *ErrorResponse) {
-	log.Printf("[222432755] err: %v", err)
-	switch e := err.(type) {
-	case *gnext.HandlerPanicked:
-		return 500, &ErrorResponse{Message: fmt.Sprintf("services panicked with %v", e.Value)}
-	}
-	return 200, &ErrorResponse{Message: err.Error(), Success: true}
-}
+//type ErrorResponse struct {
+//	gnext.ErrorResponse `status_codes:"400,401,403,409,422"`
+//	Message             string `json:"message"`
+//	Success             bool   `json:"success"`
+//}
+//
+//func dummyErrorHandler(err error) (gnext.Status, *ErrorResponse) {
+//	log.Printf("[222432755] err: %v", err)
+//	switch e := err.(type) {
+//	case *gnext.HandlerPanicked:
+//		return 500, &ErrorResponse{Message: fmt.Sprintf("services panicked with %v", e.Value)}
+//	}
+//	return 200, &ErrorResponse{Message: err.Error(), Success: true}
+//}
 
 func fullRouter() {
 	router := gnext.Router(&gdocs.Options{
@@ -84,7 +83,7 @@ func fullRouter() {
 	group.Use(NewMiddleware2(MiddlewareOptions{
 		startValue: 0,
 	}))
-	group.OnError(dummyErrorHandler)
+	//group.OnError(dummyErrorHandler)
 	group.POST("/path", innerHandler)
 
 	//Example swagger servers

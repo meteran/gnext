@@ -1,9 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/meteran/gnext"
-	"net/http"
 )
 
 func simpleRouter() {
@@ -11,6 +11,7 @@ func simpleRouter() {
 
 	r.POST("/example", handler)
 	r.Group("/shops").
+		OnError(shopErrorHandler).
 		GET("/", getShopsList).
 		GET("/:name/", getShop)
 	_ = r.Run()
@@ -43,6 +44,27 @@ func getShop(paramName string, q *ShopQuery) *MyResponse {
 	return &MyResponse{Result: paramName}
 }
 
-func getShopsList(c *gin.Context, q *ShopQuery, h *MyHeaders) (*MyResponse, gnext.Status) {
-	return &MyResponse{Result: c.Request.Method}, http.StatusOK
+func getShopsList(c *gin.Context, q *ShopQuery, h *MyHeaders) (*MyResponse, error) {
+	if q.Search == "any"{
+		return nil, &InvalidSearchError{}
+	}
+	return &MyResponse{Result: q.Search}, nil
+}
+
+type ErrorResponse struct {
+	gnext.ErrorResponse `status_codes:"400,401,403,409,422"`
+	Message             string `json:"message"`
+	Success             bool   `json:"success"`
+}
+
+type InvalidSearchError struct{ error }
+
+func shopErrorHandler(err error) (gnext.Status, *ErrorResponse) {
+	switch e := err.(type) {
+	case *gnext.HandlerPanicked:
+		return 500, &ErrorResponse{Message: fmt.Sprintf("services panicked with %v", e.Value)}
+	case *InvalidSearchError:
+		return 422, &ErrorResponse{Message: "invalid search value"}
+	}
+	return 200, &ErrorResponse{Message: err.Error(), Success: true}
 }

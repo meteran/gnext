@@ -370,6 +370,89 @@ _Note_: using middleware and error handler for the group will be presented in th
 
 ## Error handler
 
+Okay, since we already know that gNext can do a lot, maybe we'll take care of it and structure error handling?
+
+Our gNext allows you to create your own error handlers, you can bind them to groups.
+
+Error handler allows you to separate error handling from the handler method, after all, we don't need to repeat exactly the same lines of code in all methods.
+
+Well, let's see how it looks in practice, at the beginning let's add the error structure we want to return:
+
+```go
+type ErrorResponse struct {
+  gnext.ErrorResponse `status_codes:"400,401,403,409,422"`
+  Message             string `json:"message"`
+  Success             bool   `json:"success"`
+}
+```
+As you probably noticed, we added a struct tag for `gnext.ErrorResponse`,
+
+`status_codes` - codes from this tag will be added to the documentation.
+
+Okay, now let's add our own error type:
+
+```go
+type InvalidSearchError struct{ error }
+```
+
+It's time to edit our handler method a bit, we'll add out the error parameter:
+
+```go
+func getShopsList(c *gin.Context, q *ShopQuery, h *MyHeaders) (*MyResponse, error) {
+	if q.Search == "any"{
+		return nil, &InvalidSearchError{}
+	}
+	return &MyResponse{Result: q.Search}, nil
+}
+```
+
+Now, we will create out error handler:
+```go
+func shopErrorHandler(err error) (gnext.Status, *ErrorResponse) {
+	switch e := err.(type) {
+	case *gnext.HandlerPanicked:
+		return 500, &ErrorResponse{Message: fmt.Sprintf("services panicked with %v", e.Value)}
+	case *InvalidSearchError:
+		return 422, &ErrorResponse{Message: fmt.Sprintf("invalid search value")}
+	}
+	return 200, &ErrorResponse{Message: err.Error(), Success: true}
+}
+```
+
+_Note_: Error handler will not be used if error is `nil`.
+
+Okay, there is the last straight, so let's add our error handler to the group:
+
+```go
+func simpleRouter() {
+  r := gnext.Router()
+  
+  r.POST("/example", handler)
+  r.Group("/shops").
+    OnError(shopErrorHandler).
+    GET("/", getShopsList).
+    GET("/:name/", getShop)
+    _ = r.Run()
+}
+```
+
+Ok, now restart the server and use endpoint:
+
+```shell
+curl -X 'GET' \
+  'http://localhost:8080/shops/?search=any' \
+  -H 'accept: application/json'
+```
+
+the response will look like this with `422` http code:
+
+```json
+{
+  "message": "invalid search value",
+  "success": false
+}
+```
+
 ## Router options
 
 ## Benchmarks
