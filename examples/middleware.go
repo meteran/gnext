@@ -51,3 +51,23 @@ func NewMiddleware2(options MiddlewareOptions) gnext.Middleware {
 		},
 	}
 }
+
+type UserCtx struct {
+	Id int `json:"id"`
+}
+
+type AuthorizationHeaders struct {
+	gnext.Headers
+	Authorization string `header:"Authorization"`
+}
+
+func NewAuthMiddleware() gnext.Middleware {
+	return gnext.Middleware{
+		Before: func(headers AuthorizationHeaders) (*UserCtx, error) {
+			if headers.Authorization == "" {
+				return nil, fmt.Errorf("authorization is required")
+			}
+			return &UserCtx{Id: 1}, nil
+		},
+	}
+}

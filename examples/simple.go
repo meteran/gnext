@@ -8,10 +8,12 @@ import (
 
 func simpleRouter() {
 	r := gnext.Router()
+	r.Use(NewAuthMiddleware())
 
 	r.POST("/example", handler)
 	r.Group("/shops").
 		OnError(shopErrorHandler).
+		Use(NewAuthMiddleware()).
 		GET("/", getShopsList).
 		GET("/:name/", getShop)
 	_ = r.Run()
@@ -40,12 +42,12 @@ func handler(req *MyRequest) *MyResponse {
 	return &MyResponse{Result: req.Name}
 }
 
-func getShop(paramName string, q *ShopQuery) *MyResponse {
-	return &MyResponse{Result: paramName}
+func getShop(paramName string, q *ShopQuery, userCtx *UserCtx) *MyResponse {
+	return &MyResponse{Result: fmt.Sprintf("user_id: %d", userCtx.Id)}
 }
 
 func getShopsList(c *gin.Context, q *ShopQuery, h *MyHeaders) (*MyResponse, error) {
-	if q.Search == "any"{
+	if q.Search == "any" {
 		return nil, &InvalidSearchError{}
 	}
 	return &MyResponse{Result: q.Search}, nil

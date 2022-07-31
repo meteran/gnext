@@ -368,6 +368,95 @@ _Note_: using middleware and error handler for the group will be presented in th
 
 ## Middleware
 
+We decided to make the use of middleware a little easier, but also to develop it.
+
+In gNext we offer the possibility to use the `Before` and `After` middleware.
+
+We will prepare a sample middleware using `Before` to authorize the user and pass the user context to the handler method.
+
+Let's start by creating the user context that we want to use in the handler method:
+
+```go
+type UserCtx struct {
+	Id int `json:"id"`
+}
+```
+Then let's take care of where we will get the data for the middleware, in this case it will be the header and the `Authorization` field:
+```go
+type AuthorizationHeaders struct {
+	gnext.Headers
+	Authorization string `header:"Authorization"`
+}
+```
+
+Okay, it's time to create a middleware method, in this case it will be this:
+
+```go
+func NewAuthMiddleware() gnext.Middleware {
+	return gnext.Middleware{
+		Before: func(headers AuthorizationHeaders) (*UserCtx, error) {
+			if headers.Authorization == "" {
+				return nil, fmt.Errorf("authorization is required")
+			}
+			return &UserCtx{Id: 1}, nil
+		},
+	}
+}
+```
+
+Now let's add to our group to use this middleware:
+
+```go
+r.Group("/shops").
+  OnError(shopErrorHandler).
+  Use(NewAuthMiddleware()).
+  GET("/", getShopsList).
+  GET("/:name/", getShop)
+```
+
+It's time to use our middleware in the handler method 😎
+
+```go
+func getShop(paramName string, q *ShopQuery, userCtx *UserCtx) *MyResponse {
+	return &MyResponse{Result: fmt.Sprintf("user_id: %d", userCtx.Id)}
+}
+```
+
+Ok now restart the server and use the new endpoint, let's start with the situation without authorization header given:
+```shell
+curl -X 'GET' \
+  'http://localhost:8080/shops/someshop/' \
+  -H 'accept: application/json'
+```
+
+the response will look like this with `200` http code:
+
+```json
+{
+  "message": "authorization is required",
+  "success": true
+}
+```
+
+_Note_: to make it `401`, just add a new error and add it to the error handler 👏
+
+Okay, now let's add the value in the Authorization header:
+
+```shell
+curl -X 'GET' \
+  'http://localhost:8080/shops/asd/' \
+  -H 'accept: application/json' \
+  -H 'authorization: some_key'
+```
+
+the response will look like this with `200` http code:
+
+```json
+{"result":"user_id: 1"}
+```
+
+_Note_: detailed middleware description will be added in `Advanced documentation`.
+
 ## Error handler
 
 Okay, since we already know that gNext can do a lot, maybe we'll take care of it and structure error handling?
