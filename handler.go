@@ -12,6 +12,14 @@ import (
 
 var paramRegExp = regexp.MustCompile(":[a-zA-Z0-9]+/")
 
+type handlerType string
+
+const (
+	BeforeMiddleware handlerType = "before"
+	TargetHandler    handlerType = "target"
+	AfterMiddleware  handlerType = "after"
+)
+
 func WrapHandler(method string, path string, middlewares []Middleware, documentation *docs.Docs, handler, errorHandler interface{}, doc ...*docs.Endpoint) *HandlerWrapper {
 	wrapper := &HandlerWrapper{
 		method:          method,
@@ -85,21 +93,21 @@ func (w *HandlerWrapper) documentedRouter() bool {
 func (w *HandlerWrapper) init() {
 	for _, middleware := range w.middlewares {
 		if middleware.Before != nil {
-			w.chainHandler(middleware.Before, false)
+			w.chainHandler(middleware.Before, BeforeMiddleware)
 		}
 	}
 
-	w.chainHandler(w.originalHandler, true)
+	w.chainHandler(w.originalHandler, TargetHandler)
 
 	for i := len(w.middlewares) - 1; i >= 0; i-- {
 		middleware := w.middlewares[i]
 		if middleware.After != nil {
-			w.chainHandler(middleware.After, false)
+			w.chainHandler(middleware.After, AfterMiddleware)
 		}
 	}
 }
 
-func (w *HandlerWrapper) chainHandler(handler interface{}, final bool) {
+func (w *HandlerWrapper) chainHandler(handler interface{}, hType handlerType) {
 	caller := NewHandlerCaller(reflect.ValueOf(handler))
 
 	ht := reflect.TypeOf(handler)
@@ -107,13 +115,13 @@ func (w *HandlerWrapper) chainHandler(handler interface{}, final bool) {
 		panic(fmt.Sprintf("'%s' is not a function", ht))
 	}
 
-	w.inspectInParams(ht, caller)
-	w.inspectOutParams(ht, caller, final)
+	w.inspectInParams(ht, caller, hType)
+	w.inspectOutParams(ht, caller, hType)
 
 	w.handlersChain = append(w.handlersChain, caller)
 }
 
-func (w *HandlerWrapper) inspectInParams(handlerType reflect.Type, caller *HandlerCaller) {
+func (w *HandlerWrapper) inspectInParams(handlerType reflect.Type, caller *HandlerCaller, hType handlerType) {
 	paramIndex := 0
 	for i := 0; i < handlerType.NumIn(); i++ {
 		arg := handlerType.In(i)
@@ -133,7 +141,14 @@ func (w *HandlerWrapper) inspectInParams(handlerType reflect.Type, caller *Handl
 		}
 
 		if index, exists := w.valuesTypes[arg]; exists {
-			caller.addBuilder(cachedValue(index))
+			builder := cachedValue(index)
+
+			// if an error occurred, it might be that the needed input value is unset
+			// in such case we need to initiate it with a zero value to
+			if hType == AfterMiddleware {
+				builder = optionallyCachedValue(index, arg)
+			}
+			caller.addBuilder(builder)
 			continue
 		}
 
@@ -167,7 +182,7 @@ func (w *HandlerWrapper) inspectInParams(handlerType reflect.Type, caller *Handl
 	}
 }
 
-func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller *HandlerCaller, final bool) {
+func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller *HandlerCaller, hType handlerType) {
 	for i := 0; i < handlerType.NumOut(); i++ {
 		arg := handlerType.Out(i)
 
@@ -190,10 +205,10 @@ func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller *Hand
 		}
 
 		switch {
-		// `final` means, that it's the original handler
-		// in such case we consider any unknown returned object as a response
+		// if this is a target handler
+		// we consider any unknown returned object as a response
 		// just for developer convenience
-		case arg.Implements(responseInterfaceType) || final:
+		case arg.Implements(responseInterfaceType) || hType == TargetHandler:
 			w.setResponseType(arg)
 			caller.addSetter(valueSetter(w.valuesNum))
 		default:
