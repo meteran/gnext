@@ -87,7 +87,7 @@ func (c *ErrorHandlerCaller) validate(ht reflect.Type) {
 	}
 
 	if ht.NumOut() != 2 {
-		panic(fmt.Sprintf("error handler '%s' must return exactly two arguments, was '%d' arguments", ht, ht.NumOut()))
+		panic(fmt.Sprintf("error handler '%s' must return exactly two arguments(gnext.Status and a response object), was '%d' arguments", ht, ht.NumOut()))
 	}
 }
 
