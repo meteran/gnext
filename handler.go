@@ -15,18 +15,19 @@ var paramRegExp = regexp.MustCompile(":[a-zA-Z0-9]+/")
 type handlerType string
 
 const (
-	BeforeMiddleware handlerType = "before"
-	TargetHandler    handlerType = "target"
-	AfterMiddleware  handlerType = "after"
+	htBeforeMiddleware handlerType = "before"
+	htTargetHandler    handlerType = "target"
+	htAfterMiddleware  handlerType = "after"
+	htErrorHandler     handlerType = "error"
 )
 
-func WrapHandler(method string, path string, middlewares []Middleware, documentation *docs.Docs, handler, errorHandler interface{}, doc ...*docs.Endpoint) *HandlerWrapper {
+func WrapHandler(method string, path string, middlewares middlewares, documentation *docs.Docs, handler, errorHandler interface{}, doc ...*docs.Endpoint) *HandlerWrapper {
 	wrapper := &HandlerWrapper{
 		method:          method,
 		path:            path,
 		middlewares:     middlewares,
 		originalHandler: handler,
-		errorHandler:    WrapErrorHandler(errorHandler),
+		errorHandler:    errorHandler,
 		docs:            documentation,
 		params:          newParameters(path),
 		valuesTypes:     map[reflect.Type]int{},
@@ -66,24 +67,26 @@ func (p *pathParameters) index(index int) string {
 }
 
 type HandlerWrapper struct {
-	originalHandler interface{}
-	handlersChain   []*HandlerCaller
-	pathParams      []reflect.Value
-	errorHandler    *ErrorHandlerCaller
-	valuesNum       int
-	valuesTypes     map[reflect.Type]int
-	queryType       reflect.Type
-	bodyType        reflect.Type
-	headerTypes     []reflect.Type
-	responseType    reflect.Type
-	docs            *docs.Docs
-	doc             *docs.Endpoint
-	method          string
-	path            string
-	middlewares     []Middleware
-	params          pathParameters
-	responseIndex   int
-	defaultStatus   Status
+	originalHandler    interface{}
+	handlersChain      []*HandlerCaller
+	handlerFallbacks   []int
+	pathParams         []reflect.Value
+	errorHandler       interface{}
+	errorHandlerCaller *ErrorHandlerCaller
+	valuesNum          int
+	valuesTypes        map[reflect.Type]int
+	queryType          reflect.Type
+	bodyType           reflect.Type
+	headerTypes        []reflect.Type
+	responseType       reflect.Type
+	docs               *docs.Docs
+	doc                *docs.Endpoint
+	method             string
+	path               string
+	middlewares        middlewares
+	params             pathParameters
+	responseIndex      int
+	defaultStatus      Status
 }
 
 func (w *HandlerWrapper) documentedRouter() bool {
@@ -91,18 +94,36 @@ func (w *HandlerWrapper) documentedRouter() bool {
 }
 
 func (w *HandlerWrapper) init() {
+	middlewaresCount := w.middlewares.count()
+	lastAfterMiddleware := -1
 	for _, middleware := range w.middlewares {
+		if middleware.After != nil {
+			if lastAfterMiddleware == -1 {
+				lastAfterMiddleware = middlewaresCount
+			} else {
+				lastAfterMiddleware--
+			}
+		}
 		if middleware.Before != nil {
-			w.chainHandler(middleware.Before, BeforeMiddleware)
+			w.chainHandler(middleware.Before, htBeforeMiddleware)
+			w.handlerFallbacks = append(w.handlerFallbacks, lastAfterMiddleware)
 		}
 	}
 
-	w.chainHandler(w.originalHandler, TargetHandler)
+	w.chainHandler(w.originalHandler, htTargetHandler)
+	w.handlerFallbacks = append(w.handlerFallbacks, lastAfterMiddleware)
+
+	w.wrapErrorHandler()
 
 	for i := len(w.middlewares) - 1; i >= 0; i-- {
 		middleware := w.middlewares[i]
 		if middleware.After != nil {
-			w.chainHandler(middleware.After, AfterMiddleware)
+			lastAfterMiddleware++
+			if lastAfterMiddleware > middlewaresCount {
+				lastAfterMiddleware = -1
+			}
+			w.chainHandler(middleware.After, htAfterMiddleware)
+			w.handlerFallbacks = append(w.handlerFallbacks, lastAfterMiddleware)
 		}
 	}
 }
@@ -145,7 +166,7 @@ func (w *HandlerWrapper) inspectInParams(handlerType reflect.Type, caller *Handl
 
 			// if an error occurred, it might be that the needed input value is unset
 			// in such case we need to initiate it with a zero value to
-			if hType == AfterMiddleware {
+			if hType == htAfterMiddleware {
 				builder = optionallyCachedValue(index, arg)
 			}
 			caller.addBuilder(builder)
@@ -173,7 +194,7 @@ func (w *HandlerWrapper) inspectInParams(handlerType reflect.Type, caller *Handl
 				w.setBodyType(arg)
 				w.addGenericBuilder(caller, arg, binding.JSON)
 			default:
-				panic("unknown parameter purpose; neither body nor query")
+				panic("unknown input parameter purpose or type; allowed values are: request body, query and path params, headers or one of the types returned from previous middlewares")
 			}
 		}
 
@@ -182,7 +203,11 @@ func (w *HandlerWrapper) inspectInParams(handlerType reflect.Type, caller *Handl
 	}
 }
 
-func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller *HandlerCaller, hType handlerType) {
+type producingCaller interface {
+	addSetter(setter argSetter)
+}
+
+func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller producingCaller, hType handlerType) {
 	for i := 0; i < handlerType.NumOut(); i++ {
 		arg := handlerType.Out(i)
 
@@ -208,7 +233,7 @@ func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller *Hand
 		// if this is a target handler
 		// we consider any unknown returned object as a response
 		// just for developer convenience
-		case arg.Implements(responseInterfaceType) || hType == TargetHandler:
+		case arg.Implements(responseInterfaceType) || hType == htTargetHandler:
 			w.setResponseType(arg)
 			caller.addSetter(valueSetter(w.valuesNum))
 		default:
@@ -276,7 +301,7 @@ func (w *HandlerWrapper) fillDocumentation() {
 	}
 
 	if w.responseType != nil {
-		w.doc.SetResponses(w.responseType, w.errorHandler.responseType)
+		w.doc.SetResponses(w.responseType, w.errorHandlerCaller.responseType)
 		w.defaultStatus = Status(docs.DefaultStatus(w.responseType))
 	}
 
@@ -298,16 +323,17 @@ func (w *HandlerWrapper) requestHandler(rawContext *gin.Context) {
 		status:     w.defaultStatus,
 	}
 
-	for _, caller := range w.handlersChain {
-		caller.call(context)
+	for i := 0; i < len(w.handlersChain); {
+		w.handlersChain[i].call(context)
 		if context.error != nil {
-			break
+			w.errorHandlerCaller.call(context)
+			i = w.handlerFallbacks[i]
+			if i < 0 {
+				break
+			}
+		} else {
+			i++
 		}
-	}
-
-	if context.error != nil {
-		w.errorHandler.call(context)
-		return
 	}
 
 	response := context.values[w.responseIndex]
@@ -325,16 +351,17 @@ func (w *HandlerWrapper) withoutResponseRequestHandler(rawContext *gin.Context) 
 		status:     w.defaultStatus,
 	}
 
-	for _, caller := range w.handlersChain {
-		caller.call(context)
+	for i := 0; i < len(w.handlersChain); {
+		w.handlersChain[i].call(context)
 		if context.error != nil {
-			break
+			w.errorHandlerCaller.call(context)
+			i = w.handlerFallbacks[i]
+			if i < 0 {
+				break
+			}
+		} else {
+			i++
 		}
-	}
-
-	if context.error != nil {
-		w.errorHandler.call(context)
-		return
 	}
 
 	rawContext.AbortWithStatus(int(context.status))
@@ -345,4 +372,12 @@ func (w *HandlerWrapper) getHandler() gin.HandlerFunc {
 		return w.withoutResponseRequestHandler
 	}
 	return w.requestHandler
+}
+
+func (w *HandlerWrapper) wrapErrorHandler() {
+	w.errorHandlerCaller = &ErrorHandlerCaller{
+		originalHandler: w.errorHandler,
+	}
+
+	w.errorHandlerCaller.init()
 }

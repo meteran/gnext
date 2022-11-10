@@ -84,6 +84,25 @@ type Middleware struct {
 	After  interface{}
 }
 
+type middlewares []*Middleware
+
+func (m middlewares) copy() middlewares {
+	return append(middlewares{}, m...)
+}
+
+func (m middlewares) count() int {
+	count := 0
+	for _, middleware := range m {
+		if middleware.Before != nil {
+			count++
+		}
+		if middleware.After != nil {
+			count++
+		}
+	}
+	return count
+}
+
 type MiddlewareFactory func() Middleware
 
 type DefaultErrorResponse struct {

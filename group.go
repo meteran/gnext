@@ -4,17 +4,19 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/meteran/gnext/docs"
 	"net/http"
+	"reflect"
 )
 
 type routerGroup struct {
 	pathPrefix   string
 	rawRouter    gin.IRouter
-	middlewares  []Middleware
+	middlewares  middlewares
 	Docs         *docs.Docs
 	errorHandler interface{}
 }
 
 func (g *routerGroup) OnError(errorHandler interface{}) IRoutes {
+	validateErrorHandler(reflect.TypeOf(errorHandler))
 	g.errorHandler = errorHandler
 	return g
 }
@@ -61,7 +63,7 @@ func (g *routerGroup) Handle(method string, path string, handler interface{}, do
 }
 
 func (g *routerGroup) Use(middleware Middleware) IRoutes {
-	g.middlewares = append(g.middlewares, middleware)
+	g.middlewares = append(g.middlewares, &middleware)
 	return g
 }
 
@@ -69,7 +71,7 @@ func (g *routerGroup) Group(prefix string, _ ...*docs.Endpoint) IRouter {
 	return &routerGroup{
 		pathPrefix:   g.fullPath(prefix),
 		rawRouter:    g.rawRouter.Group(prefix),
-		middlewares:  append([]Middleware{}, g.middlewares...),
+		middlewares:  g.middlewares.copy(),
 		Docs:         g.Docs,
 		errorHandler: g.errorHandler,
 	}

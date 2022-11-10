@@ -48,32 +48,7 @@ func DefaultErrorHandler(err error) (status Status, response *DefaultErrorRespon
 	return
 }
 
-func WrapErrorHandler(handler interface{}) *ErrorHandlerCaller {
-	caller := &ErrorHandlerCaller{
-		originalHandler: handler,
-	}
-
-	caller.init()
-	return caller
-}
-
-type ErrorHandlerCaller struct {
-	originalHandler interface{}
-	handler         reflect.Value
-	responseType    reflect.Type
-	responseIndex   int
-	statusIndex     int
-}
-
-func (c *ErrorHandlerCaller) init() {
-	c.handler = reflect.ValueOf(c.originalHandler)
-
-	ht := reflect.TypeOf(c.originalHandler)
-	c.validate(ht)
-	c.recognizeOutParams(ht)
-}
-
-func (c *ErrorHandlerCaller) validate(ht reflect.Type) {
+func validateErrorHandler(ht reflect.Type) {
 	if ht.Kind() != reflect.Func {
 		panic(fmt.Sprintf("error handler '%s' is not a function", ht))
 	}
@@ -89,6 +64,26 @@ func (c *ErrorHandlerCaller) validate(ht reflect.Type) {
 	if ht.NumOut() != 2 {
 		panic(fmt.Sprintf("error handler '%s' must return exactly two arguments(gnext.Status and a response object), was '%d' arguments", ht, ht.NumOut()))
 	}
+}
+
+type ErrorHandlerCaller struct {
+	originalHandler interface{}
+	handler         reflect.Value
+	responseType    reflect.Type
+	argSetters      []argSetter
+	responseIndex   int
+	statusIndex     int
+}
+
+func (c *ErrorHandlerCaller) addSetter(setter argSetter) {
+	c.argSetters = append(c.argSetters, setter)
+}
+
+func (c *ErrorHandlerCaller) init() {
+	c.handler = reflect.ValueOf(c.originalHandler)
+
+	ht := reflect.TypeOf(c.originalHandler)
+	c.recognizeOutParams(ht)
 }
 
 func (c *ErrorHandlerCaller) recognizeOutParams(ht reflect.Type) {
