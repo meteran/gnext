@@ -116,8 +116,8 @@ func (c *ErrorHandlerCaller) recognizeOutParams(ht reflect.Type) {
 	}
 }
 
-func (c *ErrorHandlerCaller) call(context *callContext) {
-	results := c.handler.Call([]reflect.Value{*context.error})
+func (c *ErrorHandlerCaller) call(ctx *callContext) {
+	results := c.handler.Call([]reflect.Value{*ctx.error})
 
 	status := results[c.statusIndex].Convert(intType).Interface().(int)
 	response := results[c.responseIndex].Interface()
@@ -129,5 +129,7 @@ func (c *ErrorHandlerCaller) call(context *callContext) {
 		}
 	}
 
-	context.rawContext.JSON(status, response)
+	for i, setter := range c.argSetters {
+		setter(&results[i], ctx)
+	}
 }

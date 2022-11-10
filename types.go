@@ -66,11 +66,12 @@ type Response struct{}
 func (m Response) ResponseDocs() {}
 
 var (
-	queryInterfaceType    = reflect.TypeOf((*QueryInterface)(nil)).Elem()
-	bodyInterfaceType     = reflect.TypeOf((*BodyInterface)(nil)).Elem()
-	errorInterfaceType    = reflect.TypeOf((*error)(nil)).Elem()
-	responseInterfaceType = reflect.TypeOf((*ResponseInterface)(nil)).Elem()
-	headersInterfaceType  = reflect.TypeOf((*HeadersInterface)(nil)).Elem()
+	queryInterfaceType         = reflect.TypeOf((*QueryInterface)(nil)).Elem()
+	bodyInterfaceType          = reflect.TypeOf((*BodyInterface)(nil)).Elem()
+	errorInterfaceType         = reflect.TypeOf((*error)(nil)).Elem()
+	errorResponseInterfaceType = reflect.TypeOf((*ErrorResponse)(nil)).Elem()
+	responseInterfaceType      = reflect.TypeOf((*ResponseInterface)(nil)).Elem()
+	headersInterfaceType       = reflect.TypeOf((*HeadersInterface)(nil)).Elem()
 
 	rawContextType = reflect.TypeOf(&gin.Context{})
 	headersType    = reflect.TypeOf(Headers{})

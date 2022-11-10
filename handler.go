@@ -220,6 +220,9 @@ func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller produ
 			caller.addSetter(statusSetter(isPtr(arg)))
 			continue
 		case arg.Implements(errorInterfaceType):
+			if hType == htAfterMiddleware {
+				panic("after-middleware can not return error")
+			}
 			caller.addSetter(errorSetter)
 			continue
 		}
@@ -327,6 +330,7 @@ func (w *HandlerWrapper) requestHandler(rawContext *gin.Context) {
 		w.handlersChain[i].call(context)
 		if context.error != nil {
 			w.errorHandlerCaller.call(context)
+			context.error = nil
 			i = w.handlerFallbacks[i]
 			if i < 0 {
 				break
@@ -355,6 +359,7 @@ func (w *HandlerWrapper) withoutResponseRequestHandler(rawContext *gin.Context) 
 		w.handlersChain[i].call(context)
 		if context.error != nil {
 			w.errorHandlerCaller.call(context)
+			context.error = nil
 			i = w.handlerFallbacks[i]
 			if i < 0 {
 				break
