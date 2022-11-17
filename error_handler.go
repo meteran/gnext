@@ -66,68 +66,35 @@ func validateErrorHandler(ht reflect.Type) {
 	}
 }
 
+func newErrorHandlerCaller(handler interface{}) *ErrorHandlerCaller {
+	return &ErrorHandlerCaller{
+		originalHandler: handler,
+		handler:         reflect.ValueOf(handler),
+	}
+}
+
 type ErrorHandlerCaller struct {
 	originalHandler interface{}
 	handler         reflect.Value
-	responseType    reflect.Type
 	argSetters      []argSetter
-	responseIndex   int
-	statusIndex     int
 }
 
 func (c *ErrorHandlerCaller) addSetter(setter argSetter) {
 	c.argSetters = append(c.argSetters, setter)
 }
 
-func (c *ErrorHandlerCaller) init() {
-	c.handler = reflect.ValueOf(c.originalHandler)
-
-	ht := reflect.TypeOf(c.originalHandler)
-	c.recognizeOutParams(ht)
-}
-
-func (c *ErrorHandlerCaller) recognizeOutParams(ht reflect.Type) {
-	errorMsg := fmt.Sprintf("error handler '%s' must return status of type 'int' and some other type as response payload; if you need an integer as payload, use 'gnext.Status' for status", ht)
-
-	switch {
-	// NOTE: order of cases below is meaningful, do not touch it without a good reason
-	case ht.Out(0) == ht.Out(1):
-		panic(errorMsg)
-	case ht.Out(0) == statusType:
-		c.statusIndex = 0
-		c.responseIndex = 1
-		c.responseType = ht.Out(1)
-	case ht.Out(1) == statusType:
-		c.statusIndex = 1
-		c.responseIndex = 0
-		c.responseType = ht.Out(0)
-	case ht.Out(0).Kind() == reflect.Int && ht.Out(1).Kind() == reflect.Int:
-		panic(errorMsg)
-	case ht.Out(0).Kind() == reflect.Int:
-		c.statusIndex = 0
-		c.responseIndex = 1
-		c.responseType = ht.Out(1)
-	case ht.Out(1).Kind() == reflect.Int:
-		c.statusIndex = 1
-		c.responseIndex = 0
-		c.responseType = ht.Out(0)
-	default:
-		panic(errorMsg)
-	}
-}
-
 func (c *ErrorHandlerCaller) call(ctx *callContext) {
 	results := c.handler.Call([]reflect.Value{*ctx.error})
 
-	status := results[c.statusIndex].Convert(intType).Interface().(int)
-	response := results[c.responseIndex].Interface()
-	if status == 0 {
-		status = 500
-		response = &DefaultErrorResponse{
-			Message: "internal server error",
-			Success: false,
-		}
-	}
+	//status := results[c.statusIndex].Convert(intType).Interface().(int)
+	//response := results[c.responseIndex].Interface()
+	//if status == 0 {
+	//	status = 500
+	//	response = &DefaultErrorResponse{
+	//		Message: "internal server error",
+	//		Success: false,
+	//	}
+	//}
 
 	for i, setter := range c.argSetters {
 		setter(&results[i], ctx)

@@ -216,6 +216,10 @@ func modelSchema(type_ reflect.Type) *openapi3.Schema {
 	case reflect.Interface:
 		schema = openapi3.NewSchema()
 		schema.Default = "any"
+	case reflect.String:
+		schema = openapi3.NewStringSchema()
+	case reflect.Int:
+		schema = openapi3.NewIntegerSchema()
 	default:
 		schema = defaultModelSchema(type_)
 	}

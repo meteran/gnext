@@ -31,7 +31,6 @@ func WrapHandler(method string, path string, middlewares middlewares, documentat
 		docs:            documentation,
 		params:          newParameters(path),
 		valuesTypes:     map[reflect.Type]int{},
-		responseIndex:   -1,
 		defaultStatus:   200,
 	}
 
@@ -85,8 +84,9 @@ type HandlerWrapper struct {
 	path               string
 	middlewares        middlewares
 	params             pathParameters
-	responseIndex      int
+	responseIndexes    []int
 	defaultStatus      Status
+	errorResponseType  reflect.Type
 }
 
 func (w *HandlerWrapper) documentedRouter() bool {
@@ -228,7 +228,11 @@ func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller produ
 		}
 
 		if index, exists := w.valuesTypes[arg]; exists {
-			caller.addSetter(valueSetter(index))
+			if w.isResponseIndex(index) {
+				caller.addSetter(responseSetter(index))
+			} else {
+				caller.addSetter(valueSetter(index))
+			}
 			continue
 		}
 
@@ -238,7 +242,12 @@ func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller produ
 		// just for developer convenience
 		case arg.Implements(responseInterfaceType) || hType == htTargetHandler:
 			w.setResponseType(arg)
-			caller.addSetter(valueSetter(w.valuesNum))
+			caller.addSetter(responseSetter(w.valuesNum))
+			w.responseIndexes = append(w.responseIndexes, w.valuesNum)
+		case hType == htErrorHandler:
+			w.errorResponseType = arg
+			caller.addSetter(responseSetter(w.valuesNum))
+			w.responseIndexes = append(w.responseIndexes, w.valuesNum)
 		default:
 			caller.addSetter(valueSetter(w.valuesNum))
 		}
@@ -273,7 +282,6 @@ func (w *HandlerWrapper) setResponseType(argType reflect.Type) {
 		panic(fmt.Sprintf("ambiguous response type: %s and %s", w.responseType, argType))
 	}
 	w.responseType = argType
-	w.responseIndex = w.valuesNum
 }
 
 func (w *HandlerWrapper) isPathParam(argType reflect.Type) bool {
@@ -304,7 +312,7 @@ func (w *HandlerWrapper) fillDocumentation() {
 	}
 
 	if w.responseType != nil {
-		w.doc.SetResponses(w.responseType, w.errorHandlerCaller.responseType)
+		w.doc.SetResponses(w.responseType, w.errorResponseType)
 		w.defaultStatus = Status(docs.DefaultStatus(w.responseType))
 	}
 
@@ -321,9 +329,10 @@ func (w *HandlerWrapper) fillDocumentation() {
 
 func (w *HandlerWrapper) requestHandler(rawContext *gin.Context) {
 	context := &callContext{
-		rawContext: rawContext,
-		values:     make([]*reflect.Value, w.valuesNum),
-		status:     w.defaultStatus,
+		rawContext:    rawContext,
+		values:        make([]*reflect.Value, w.valuesNum),
+		status:        w.defaultStatus,
+		responseIndex: -1,
 	}
 
 	for i := 0; i < len(w.handlersChain); {
@@ -340,49 +349,24 @@ func (w *HandlerWrapper) requestHandler(rawContext *gin.Context) {
 		}
 	}
 
-	response := context.values[w.responseIndex]
-	if response == nil {
+	if context.responseIndex < 0 {
 		rawContext.AbortWithStatus(int(context.status))
 		return
 	}
-	rawContext.JSON(int(context.status), response.Interface())
-}
-
-func (w *HandlerWrapper) withoutResponseRequestHandler(rawContext *gin.Context) {
-	context := &callContext{
-		rawContext: rawContext,
-		values:     make([]*reflect.Value, w.valuesNum),
-		status:     w.defaultStatus,
-	}
-
-	for i := 0; i < len(w.handlersChain); {
-		w.handlersChain[i].call(context)
-		if context.error != nil {
-			w.errorHandlerCaller.call(context)
-			context.error = nil
-			i = w.handlerFallbacks[i]
-			if i < 0 {
-				break
-			}
-		} else {
-			i++
-		}
-	}
-
-	rawContext.AbortWithStatus(int(context.status))
-}
-
-func (w *HandlerWrapper) getHandler() gin.HandlerFunc {
-	if w.responseIndex < 0 {
-		return w.withoutResponseRequestHandler
-	}
-	return w.requestHandler
+	rawContext.JSON(int(context.status), context.values[context.responseIndex].Interface())
 }
 
 func (w *HandlerWrapper) wrapErrorHandler() {
-	w.errorHandlerCaller = &ErrorHandlerCaller{
-		originalHandler: w.errorHandler,
-	}
+	w.errorHandlerCaller = newErrorHandlerCaller(w.errorHandler)
 
-	w.errorHandlerCaller.init()
+	w.inspectOutParams(reflect.TypeOf(w.errorHandler), w.errorHandlerCaller, htErrorHandler)
+}
+
+func (w *HandlerWrapper) isResponseIndex(index int) bool {
+	for _, idx := range w.responseIndexes {
+		if idx == index {
+			return true
+		}
+	}
+	return false
 }

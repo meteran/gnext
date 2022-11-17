@@ -6,8 +6,9 @@ import (
 )
 
 type callContext struct {
-	rawContext *gin.Context
-	values     []*reflect.Value
-	error      *reflect.Value
-	status     Status
+	rawContext    *gin.Context
+	values        []*reflect.Value
+	error         *reflect.Value
+	status        Status
+	responseIndex int
 }
