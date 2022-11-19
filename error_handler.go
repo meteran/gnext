@@ -48,32 +48,7 @@ func DefaultErrorHandler(err error) (status Status, response *DefaultErrorRespon
 	return
 }
 
-func WrapErrorHandler(handler interface{}) *ErrorHandlerCaller {
-	caller := &ErrorHandlerCaller{
-		originalHandler: handler,
-	}
-
-	caller.init()
-	return caller
-}
-
-type ErrorHandlerCaller struct {
-	originalHandler interface{}
-	handler         reflect.Value
-	responseType    reflect.Type
-	responseIndex   int
-	statusIndex     int
-}
-
-func (c *ErrorHandlerCaller) init() {
-	c.handler = reflect.ValueOf(c.originalHandler)
-
-	ht := reflect.TypeOf(c.originalHandler)
-	c.validate(ht)
-	c.recognizeOutParams(ht)
-}
-
-func (c *ErrorHandlerCaller) validate(ht reflect.Type) {
+func validateErrorHandler(ht reflect.Type) {
 	if ht.Kind() != reflect.Func {
 		panic(fmt.Sprintf("error handler '%s' is not a function", ht))
 	}
@@ -87,52 +62,41 @@ func (c *ErrorHandlerCaller) validate(ht reflect.Type) {
 	}
 
 	if ht.NumOut() != 2 {
-		panic(fmt.Sprintf("error handler '%s' must return exactly two arguments, was '%d' arguments", ht, ht.NumOut()))
+		panic(fmt.Sprintf("error handler '%s' must return exactly two arguments(gnext.Status and a response object), was '%d' arguments", ht, ht.NumOut()))
 	}
 }
 
-func (c *ErrorHandlerCaller) recognizeOutParams(ht reflect.Type) {
-	errorMsg := fmt.Sprintf("error handler '%s' must return status of type 'int' and some other type as response payload; if you need an integer as payload, use 'gnext.Status' for status", ht)
-
-	switch {
-	// NOTE: order of cases below is meaningful, do not touch it without a good reason
-	case ht.Out(0) == ht.Out(1):
-		panic(errorMsg)
-	case ht.Out(0) == statusType:
-		c.statusIndex = 0
-		c.responseIndex = 1
-		c.responseType = ht.Out(1)
-	case ht.Out(1) == statusType:
-		c.statusIndex = 1
-		c.responseIndex = 0
-		c.responseType = ht.Out(0)
-	case ht.Out(0).Kind() == reflect.Int && ht.Out(1).Kind() == reflect.Int:
-		panic(errorMsg)
-	case ht.Out(0).Kind() == reflect.Int:
-		c.statusIndex = 0
-		c.responseIndex = 1
-		c.responseType = ht.Out(1)
-	case ht.Out(1).Kind() == reflect.Int:
-		c.statusIndex = 1
-		c.responseIndex = 0
-		c.responseType = ht.Out(0)
-	default:
-		panic(errorMsg)
+func newErrorHandlerCaller(handler interface{}) *ErrorHandlerCaller {
+	return &ErrorHandlerCaller{
+		originalHandler: handler,
+		handler:         reflect.ValueOf(handler),
 	}
 }
 
-func (c *ErrorHandlerCaller) call(context *callContext) {
-	results := c.handler.Call([]reflect.Value{*context.error})
+type ErrorHandlerCaller struct {
+	originalHandler interface{}
+	handler         reflect.Value
+	argSetters      []argSetter
+}
 
-	status := results[c.statusIndex].Convert(intType).Interface().(int)
-	response := results[c.responseIndex].Interface()
-	if status == 0 {
-		status = 500
-		response = &DefaultErrorResponse{
-			Message: "internal server error",
-			Success: false,
-		}
+func (c *ErrorHandlerCaller) addSetter(setter argSetter) {
+	c.argSetters = append(c.argSetters, setter)
+}
+
+func (c *ErrorHandlerCaller) call(ctx *callContext) {
+	results := c.handler.Call([]reflect.Value{*ctx.error})
+
+	//status := results[c.statusIndex].Convert(intType).Interface().(int)
+	//response := results[c.responseIndex].Interface()
+	//if status == 0 {
+	//	status = 500
+	//	response = &DefaultErrorResponse{
+	//		Message: "internal server error",
+	//		Success: false,
+	//	}
+	//}
+
+	for i, setter := range c.argSetters {
+		setter(&results[i], ctx)
 	}
-
-	context.rawContext.JSON(status, response)
 }

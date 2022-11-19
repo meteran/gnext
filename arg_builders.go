@@ -114,6 +114,17 @@ func cached(builder argBuilder, cacheIndex int) argBuilder {
 	}
 }
 
+func optionallyCachedValue(cacheIndex int, arg reflect.Type) argBuilder {
+	return func(ctx *callContext) (reflect.Value, error) {
+		if ctx.values[cacheIndex] == nil {
+			newValue := reflect.New(arg).Elem()
+			ctx.values[cacheIndex] = &newValue
+			return newValue, nil
+		}
+		return *ctx.values[cacheIndex], nil
+	}
+}
+
 func cachedValue(cacheIndex int) argBuilder {
 	return func(ctx *callContext) (reflect.Value, error) {
 		return *ctx.values[cacheIndex], nil

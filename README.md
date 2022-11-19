@@ -4,7 +4,7 @@
 [![GoDoc](https://pkg.go.dev/badge/github.com/meteran/gnext?status.svg)](https://pkg.go.dev/github.com/meteran/gnext?tab=doc)
 [![Release](https://img.shields.io/github/release/meteran/gnext.svg?style=flat-square)](https://github.com/meteran/gnext/releases)
 
-gNext is a brilliant Golang API-focused framework extending [Gin](https://github.com/gin-gonic/gin). Offers the API
+gNext is a Golang API-focused framework extending [Gin](https://github.com/gin-gonic/gin). Offers the API
 structuring, automates validation and generates documentation. It's compatible with the existing Gin handlers and Gin
 middlewares. Designed to simplify and boost development of JSON APIs. You can leave generic and boring stuff to gNext
 and purely focus on the business logic of your code.

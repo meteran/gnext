@@ -10,6 +10,13 @@ func valueSetter(contextIndex int) argSetter {
 	}
 }
 
+func responseSetter(contextIndex int) argSetter {
+	return func(value *reflect.Value, ctx *callContext) {
+		ctx.values[contextIndex] = value
+		ctx.responseIndex = contextIndex
+	}
+}
+
 func errorSetter(value *reflect.Value, ctx *callContext) {
 	if !value.IsNil() {
 		ctx.error = value
