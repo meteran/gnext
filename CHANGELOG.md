@@ -6,7 +6,7 @@
 
   * [NEW] Error handlers dedicated for specific types of errors
   * [FIX] Primitive custom types are now allowed in payloads
-  * [EDIT] Switch from single to multi error handling
+  * [EDIT] Switch from one to multiple error handlers
   * [EDIT] Fallback to middlewares after error handling
 
 ---
