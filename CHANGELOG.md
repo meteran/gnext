@@ -2,7 +2,16 @@
 
 ---
 
-## gNext v0.6.0 (01.05.2022) Latest
+## gNext v0.7.0 (-) Latest
+
+  * [NEW] Error handlers dedicated for specific types of errors
+  * [FIX] Primitive custom types are now allowed in payloads
+  * [EDIT] Switch from single to multi error handling
+  * [EDIT] Fallback to middlewares after error handling
+
+---
+
+## gNext v0.6.0 (01.05.2022)
 
   * [FIX] Handler without response body
   * [FIX] Error value setter
