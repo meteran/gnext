@@ -57,13 +57,14 @@ func validateErrorHandler(ht reflect.Type) {
 		panic(fmt.Sprintf("error handler '%s' must accept exactly one argument of type 'error', was '%d' arguments", ht, ht.NumIn()))
 	}
 
-	if ht.In(0) != errorInterfaceType {
-		panic(fmt.Sprintf("error handler '%s' must accept argument of type 'error' instead of type '%s'", ht, ht.In(0)))
+	input := ht.In(0)
+	if !input.Implements(errorInterfaceType) {
+		panic(fmt.Sprintf("error handler '%s' must accept argument of type 'error' or implements 'error` instead of type '%s'", ht, input))
 	}
 
-	if ht.NumOut() != 2 {
-		panic(fmt.Sprintf("error handler '%s' must return exactly two arguments(gnext.Status and a response object), was '%d' arguments", ht, ht.NumOut()))
-	}
+	//if ht.NumOut() != 2 {
+	//	panic(fmt.Sprintf("error handler '%s' must return exactly two arguments(gnext.Status and a response object), was '%d' arguments", ht, ht.NumOut()))
+	//}
 }
 
 func newErrorHandlerCaller(handler interface{}) *ErrorHandlerCaller {
