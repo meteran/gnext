@@ -13,6 +13,30 @@ import (
 var resetColor = "\033[0m"
 var errLog = log.New(os.Stderr, "\n\n\x1b[31m", log.LstdFlags)
 
+// errorHandlers is a mapping from an error type to that error handler
+type errorHandlers map[reflect.Type]reflect.Value
+
+func (h errorHandlers) setup(handler interface{}) {
+	ht := reflect.TypeOf(handler)
+	validateErrorHandler(ht)
+
+	h[ht.In(0)] = reflect.ValueOf(handler)
+}
+
+func (h errorHandlers) copy() errorHandlers {
+	newHandlers := make(errorHandlers, len(h))
+	for typ, value := range h {
+		newHandlers[typ] = value
+	}
+	return newHandlers
+}
+
+func newErrorHandlers() errorHandlers {
+	handlers := errorHandlers{}
+	handlers.setup(DefaultErrorHandler)
+	return handlers
+}
+
 func DefaultErrorHandler(err error) (status Status, response *DefaultErrorResponse) {
 	status = 500
 	response = &DefaultErrorResponse{
@@ -54,48 +78,32 @@ func validateErrorHandler(ht reflect.Type) {
 	}
 
 	if ht.NumIn() != 1 {
-		panic(fmt.Sprintf("error handler '%s' must accept exactly one argument of type 'error', was '%d' arguments", ht, ht.NumIn()))
+		panic(fmt.Sprintf("error handler '%s' must accept exactly one argument implementing 'error', was '%d' arguments", ht, ht.NumIn()))
 	}
 
 	input := ht.In(0)
 	if !input.Implements(errorInterfaceType) {
-		panic(fmt.Sprintf("error handler '%s' must accept argument of type 'error' or implements 'error` instead of type '%s'", ht, input))
-	}
-
-	//if ht.NumOut() != 2 {
-	//	panic(fmt.Sprintf("error handler '%s' must return exactly two arguments(gnext.Status and a response object), was '%d' arguments", ht, ht.NumOut()))
-	//}
-}
-
-func newErrorHandlerCaller(handler interface{}) *ErrorHandlerCaller {
-	return &ErrorHandlerCaller{
-		originalHandler: handler,
-		handler:         reflect.ValueOf(handler),
+		panic(fmt.Sprintf("error handler '%s' must accept argument implementing 'error`, got type '%s'", ht, input))
 	}
 }
 
-type ErrorHandlerCaller struct {
-	originalHandler interface{}
-	handler         reflect.Value
-	argSetters      []argSetter
+func newErrorHandlerCaller(handler reflect.Value) *errorHandlerCaller {
+	return &errorHandlerCaller{
+		handler: handler,
+	}
 }
 
-func (c *ErrorHandlerCaller) addSetter(setter argSetter) {
+type errorHandlerCaller struct {
+	handler    reflect.Value
+	argSetters []argSetter
+}
+
+func (c *errorHandlerCaller) addSetter(setter argSetter) {
 	c.argSetters = append(c.argSetters, setter)
 }
 
-func (c *ErrorHandlerCaller) call(ctx *callContext) {
+func (c *errorHandlerCaller) call(ctx *callContext) {
 	results := c.handler.Call([]reflect.Value{*ctx.error})
-
-	//status := results[c.statusIndex].Convert(intType).Interface().(int)
-	//response := results[c.responseIndex].Interface()
-	//if status == 0 {
-	//	status = 500
-	//	response = &DefaultErrorResponse{
-	//		Message: "internal server error",
-	//		Success: false,
-	//	}
-	//}
 
 	for i, setter := range c.argSetters {
 		setter(&results[i], ctx)
