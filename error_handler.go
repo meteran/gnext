@@ -94,8 +94,9 @@ func newErrorHandlerCaller(handler reflect.Value) *errorHandlerCaller {
 }
 
 type errorHandlerCaller struct {
-	handler    reflect.Value
-	argSetters []argSetter
+	handler       reflect.Value
+	argSetters    []argSetter
+	defaultStatus Status
 }
 
 func (c *errorHandlerCaller) addSetter(setter argSetter) {
@@ -103,7 +104,8 @@ func (c *errorHandlerCaller) addSetter(setter argSetter) {
 }
 
 func (c *errorHandlerCaller) call(ctx *callContext) {
-	results := c.handler.Call([]reflect.Value{*ctx.error})
+	results := c.handler.Call([]reflect.Value{ctx.error.Elem()})
+	ctx.status = c.defaultStatus
 
 	for i, setter := range c.argSetters {
 		setter(&results[i], ctx)

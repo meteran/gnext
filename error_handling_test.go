@@ -300,22 +300,22 @@ func TestRouteErrorsToSpecificHandlers(t *testing.T) {
 		{
 			path:     "/grouped/unknown-fallback",
 			status:   404,
-			response: `{}`,
+			response: `"fallback"`,
 		},
 		{
 			path:     "/grouped/global-global",
 			status:   501,
-			response: `{}`,
+			response: `{"message":"global"}`,
 		},
 		{
 			path:     "/grouped/specific-specific",
 			status:   401,
-			response: `{}`,
+			response: `{"code": 10}`,
 		},
 		{
 			path:     "/grouped/specific-overwriting",
 			status:   422,
-			response: `{}`,
+			response: `{"error": "overwriting"}`,
 		},
 	}
 
