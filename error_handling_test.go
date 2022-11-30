@@ -267,7 +267,6 @@ func TestRouteErrorsToSpecificHandlers(t *testing.T) {
 
 	docs, err := json.Marshal(r.Docs.OpenApi)
 	require.NoError(t, err)
-	fmt.Println(string(docs))
 	assert.JSONEq(t, routeErrorsToSpecificHandlersExpectedDocs, string(docs))
 
 	cases := []struct {

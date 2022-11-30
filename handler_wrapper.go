@@ -326,7 +326,7 @@ func (w *HandlerWrapper) fillDocumentation() {
 	}
 
 	for _, errorType := range w.errorResponseTypes {
-		w.doc.AddResponse(errorType)
+		w.doc.AddErrorResponse(errorType)
 	}
 
 	if w.responseType != nil {
