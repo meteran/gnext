@@ -31,32 +31,29 @@ func (e *Endpoint) SetBodyType(bodyType reflect.Type) {
 	}
 }
 
-func (e *Endpoint) SetResponses(responseType reflect.Type, errorType reflect.Type) {
+func (e *Endpoint) AddResponse(responseType reflect.Type) {
+	e.addResponse(responseType, 200)
+}
+
+func (e *Endpoint) AddErrorResponse(responseType reflect.Type) {
+	e.addResponse(responseType, 500)
+}
+
+func (e *Endpoint) addResponse(responseType reflect.Type, defaultStatus int) {
 	if len(e.Responses) == 0 {
-		e.Responses = openapi3.NewResponses()
+		e.Responses = make(openapi3.Responses, 1)
 	}
 
-	delete(e.Responses, "default")
 	schema := modelSchema(responseType)
 	response := &openapi3.ResponseRef{
 		Value: &openapi3.Response{Content: openapi3.NewContentWithJSONSchema(schema)},
 	}
 
-	defaultStatus := strconv.Itoa(DefaultStatus(responseType))
+	statusCode := strconv.Itoa(DefaultStatus(responseType, defaultStatus))
 
-	codes := append(getStatusCodes(responseType), defaultStatus)
+	codes := append(getStatusCodes(responseType), statusCode)
 	for _, code := range codes {
 		e.Responses[code] = response
-	}
-
-	if errorType != nil {
-		errorSchema := modelSchema(errorType)
-		errorContent := openapi3.NewContentWithJSONSchema(errorSchema)
-		for _, code := range getStatusCodes(errorType) {
-			e.Responses[code] = &openapi3.ResponseRef{
-				Value: &openapi3.Response{Content: errorContent},
-			}
-		}
 	}
 }
 
@@ -107,7 +104,7 @@ func (e *Endpoint) AddHeadersType(headerType reflect.Type) {
 	}
 }
 
-func DefaultStatus(type_ reflect.Type) int {
+func DefaultStatus(type_ reflect.Type, default_ ...int) int {
 	if type_.Kind() == reflect.Ptr {
 		type_ = type_.Elem()
 	}
@@ -123,6 +120,9 @@ func DefaultStatus(type_ reflect.Type) int {
 				return status
 			}
 		}
+	}
+	if len(default_) > 0 {
+		return default_[0]
 	}
 	return 200
 }

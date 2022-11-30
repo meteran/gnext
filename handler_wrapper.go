@@ -95,7 +95,7 @@ type HandlerWrapper struct {
 	params              pathParameters
 	responseIndexes     []int
 	defaultStatus       Status
-	errorResponseType   reflect.Type
+	errorResponseTypes  []reflect.Type
 }
 
 func (w *HandlerWrapper) documentedRouter() bool {
@@ -257,7 +257,7 @@ func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller produ
 			w.responseIndexes = append(w.responseIndexes, w.valuesNum)
 			responseType = arg
 		case hType == htErrorHandler:
-			w.errorResponseType = arg
+			w.errorResponseTypes = append(w.errorResponseTypes, arg)
 			caller.addSetter(responseSetter(w.valuesNum))
 			w.responseIndexes = append(w.responseIndexes, w.valuesNum)
 			responseType = arg
@@ -325,8 +325,12 @@ func (w *HandlerWrapper) fillDocumentation() {
 		w.doc.SetBodyType(w.bodyType)
 	}
 
+	for _, errorType := range w.errorResponseTypes {
+		w.doc.AddResponse(errorType)
+	}
+
 	if w.responseType != nil {
-		w.doc.SetResponses(w.responseType, w.errorResponseType)
+		w.doc.AddResponse(w.responseType)
 		w.defaultStatus = Status(docs.DefaultStatus(w.responseType))
 	}
 
@@ -378,7 +382,7 @@ func (w *HandlerWrapper) wrapErrorHandlers() {
 	for inputType, errorHandler := range w.errorHandlers {
 		errorHandlerCaller := newErrorHandlerCaller(errorHandler)
 		responseType := w.inspectOutParams(errorHandler.Type(), errorHandlerCaller, htErrorHandler)
-		errorHandlerCaller.defaultStatus = Status(docs.DefaultStatus(responseType))
+		errorHandlerCaller.defaultStatus = Status(docs.DefaultStatus(responseType, 500))
 		w.errorHandlerCallers[inputType] = errorHandlerCaller
 	}
 }
