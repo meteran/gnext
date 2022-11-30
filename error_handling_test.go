@@ -2,8 +2,10 @@ package gnext
 
 import (
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
 )
@@ -230,7 +232,7 @@ func TestRouteErrorsToSpecificHandlers(t *testing.T) {
 		return specificResp, 401
 	}
 
-	overwritingHandler := func(err specificError) *overwritingResponse {
+	overwritingHandler := func(err *specificError) *overwritingResponse {
 		return overwritingResp
 	}
 
@@ -263,9 +265,10 @@ func TestRouteErrorsToSpecificHandlers(t *testing.T) {
 	group.OnError(overwritingHandler)
 	group.GET("/specific-overwriting", handlerRaisingSpecificError)
 
-	//docs, err := json.Marshal(r.Docs.OpenApi)
-	//require.NoError(t, err)
-	//assert.JSONEq(t, routeErrorsToSpecificHandlersExpectedDocs, string(docs))
+	docs, err := json.Marshal(r.Docs.OpenApi)
+	require.NoError(t, err)
+	fmt.Println(string(docs))
+	assert.JSONEq(t, routeErrorsToSpecificHandlersExpectedDocs, string(docs))
 
 	cases := []struct {
 		path     string

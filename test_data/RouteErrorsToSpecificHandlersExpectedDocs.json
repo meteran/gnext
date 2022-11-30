@@ -6,7 +6,249 @@
   },
   "openapi": "3.0.0",
   "paths": {
-    "/default-unknown": {
+    "/global-global": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "default": "any"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "global-global"
+        ]
+      }
+    },
+    "/grouped/global-global": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "default": "any"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "grouped",
+          "global-global"
+        ]
+      }
+    },
+    "/grouped/specific-overwriting": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "default": "any"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "grouped",
+          "specific-overwriting"
+        ]
+      }
+    },
+    "/grouped/specific-specific": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "default": "any"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "grouped",
+          "specific-specific"
+        ]
+      }
+    },
+    "/grouped/unknown-fallback": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "default": "any"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "grouped",
+          "unknown-fallback"
+        ]
+      }
+    },
+    "/specific-fallback": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "default": "any"
+                }
+              }
+            }
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "specific-fallback"
+        ]
+      }
+    },
+    "/specific-specific": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "default": "any"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "specific-specific"
+        ]
+      }
+    },
+    "/unknown-default": {
       "get": {
         "responses": {
           "200": {
@@ -66,65 +308,11 @@
           }
         },
         "tags": [
-          "default-unknown"
+          "unknown-default"
         ]
       }
     },
-    "/fallback-specific": {
-      "get": {
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "default": "any"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "fallback-specific"
-        ]
-      }
-    },
-    "/fallback-unknown": {
-      "get": {
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "default": "any"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "fallback-unknown"
-        ]
-      }
-    },
-    "/global-global": {
-      "get": {
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "default": "any"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "global-global"
-        ]
-      }
-    },
-    "/grouped/fallback-unknown": {
+    "/unknown-fallback": {
       "get": {
         "responses": {
           "200": {
@@ -136,27 +324,13 @@
               }
             }
           },
-          "401": {
+          "502": {
             "content": {
               "application/json": {
                 "schema": {
                   "properties": {
-                    "code": {
-                      "type": "integer"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "code": {
-                      "type": "integer"
+                    "message": {
+                      "type": "string"
                     }
                   },
                   "type": "object"
@@ -166,167 +340,7 @@
           }
         },
         "tags": [
-          "grouped",
-          "fallback-unknown"
-        ]
-      }
-    },
-    "/grouped/global-global": {
-      "get": {
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "default": "any"
-                }
-              }
-            }
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "grouped",
-          "global-global"
-        ]
-      }
-    },
-    "/grouped/overwriting-specific": {
-      "get": {
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "default": "any"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "grouped",
-          "overwriting-specific"
-        ]
-      }
-    },
-    "/grouped/specific-specific": {
-      "get": {
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "default": "any"
-                }
-              }
-            }
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "grouped",
-          "specific-specific"
-        ]
-      }
-    },
-    "/specific-specific": {
-      "get": {
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "default": "any"
-                }
-              }
-            }
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "specific-specific"
+          "unknown-fallback"
         ]
       }
     }

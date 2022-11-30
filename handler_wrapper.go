@@ -216,7 +216,8 @@ type producingCaller interface {
 	addSetter(setter argSetter)
 }
 
-func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller producingCaller, hType handlerType) {
+func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller producingCaller, hType handlerType) reflect.Type {
+	var responseType reflect.Type
 	for i := 0; i < handlerType.NumOut(); i++ {
 		arg := handlerType.Out(i)
 
@@ -239,6 +240,7 @@ func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller produ
 		if index, exists := w.valuesTypes[arg]; exists {
 			if w.isResponseIndex(index) {
 				caller.addSetter(responseSetter(index))
+				responseType = arg
 			} else {
 				caller.addSetter(valueSetter(index))
 			}
@@ -253,10 +255,12 @@ func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller produ
 			w.setResponseType(arg)
 			caller.addSetter(responseSetter(w.valuesNum))
 			w.responseIndexes = append(w.responseIndexes, w.valuesNum)
+			responseType = arg
 		case hType == htErrorHandler:
 			w.errorResponseType = arg
 			caller.addSetter(responseSetter(w.valuesNum))
 			w.responseIndexes = append(w.responseIndexes, w.valuesNum)
+			responseType = arg
 		default:
 			caller.addSetter(valueSetter(w.valuesNum))
 		}
@@ -264,6 +268,7 @@ func (w *HandlerWrapper) inspectOutParams(handlerType reflect.Type, caller produ
 		w.valuesTypes[arg] = w.valuesNum
 		w.valuesNum++
 	}
+	return responseType
 }
 
 func (w *HandlerWrapper) appendHeadersType(argType reflect.Type) {
@@ -372,7 +377,8 @@ func (w *HandlerWrapper) requestHandler(rawContext *gin.Context) {
 func (w *HandlerWrapper) wrapErrorHandlers() {
 	for inputType, errorHandler := range w.errorHandlers {
 		errorHandlerCaller := newErrorHandlerCaller(errorHandler)
-		w.inspectOutParams(errorHandler.Type(), errorHandlerCaller, htErrorHandler)
+		responseType := w.inspectOutParams(errorHandler.Type(), errorHandlerCaller, htErrorHandler)
+		errorHandlerCaller.defaultStatus = Status(docs.DefaultStatus(responseType))
 		w.errorHandlerCallers[inputType] = errorHandlerCaller
 	}
 }

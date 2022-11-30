@@ -89,7 +89,8 @@ func validateErrorHandler(ht reflect.Type) {
 
 func newErrorHandlerCaller(handler reflect.Value) *errorHandlerCaller {
 	return &errorHandlerCaller{
-		handler: handler,
+		handler:       handler,
+		defaultStatus: 500,
 	}
 }
 
