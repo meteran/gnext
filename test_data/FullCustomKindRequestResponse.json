@@ -1,0 +1,310 @@
+{
+  "components": {},
+  "info": {
+    "title": "Documentation",
+    "version": "1.0.0"
+  },
+  "openapi": "3.0.0",
+  "paths": {
+    "/full": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "array": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "array_ptr": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "bool": {
+                      "type": "boolean"
+                    },
+                    "bool_ptr": {
+                      "type": "boolean"
+                    },
+                    "float32": {
+                      "type": "number"
+                    },
+                    "float32_ptr": {
+                      "type": "number"
+                    },
+                    "float64": {
+                      "type": "number"
+                    },
+                    "float64_ptr": {
+                      "type": "number"
+                    },
+                    "int": {
+                      "maximum": 9223372036854776000,
+                      "minimum": -9223372036854776000,
+                      "type": "integer"
+                    },
+                    "int16": {
+                      "maximum": 32767,
+                      "minimum": -32768,
+                      "type": "integer"
+                    },
+                    "int16_ptr": {
+                      "maximum": 32767,
+                      "minimum": -32768,
+                      "type": "integer"
+                    },
+                    "int32": {
+                      "format": "int32",
+                      "maximum": 2147483647,
+                      "minimum": -2147483648,
+                      "type": "integer"
+                    },
+                    "int32_ptr": {
+                      "format": "int32",
+                      "maximum": 2147483647,
+                      "minimum": -2147483648,
+                      "type": "integer"
+                    },
+                    "int64": {
+                      "format": "int64",
+                      "maximum": 9223372036854776000,
+                      "minimum": -9223372036854776000,
+                      "type": "integer"
+                    },
+                    "int64_ptr": {
+                      "format": "int64",
+                      "maximum": 9223372036854776000,
+                      "minimum": -9223372036854776000,
+                      "type": "integer"
+                    },
+                    "int8": {
+                      "maximum": 127,
+                      "minimum": -128,
+                      "type": "integer"
+                    },
+                    "int8_ptr": {
+                      "maximum": 127,
+                      "minimum": -128,
+                      "type": "integer"
+                    },
+                    "int_ptr": {
+                      "maximum": 9223372036854776000,
+                      "minimum": -9223372036854776000,
+                      "type": "integer"
+                    },
+                    "interface": {
+                      "default": "any"
+                    },
+                    "interface_ptr": {
+                      "default": "any"
+                    },
+                    "map": {
+                      "additionalProperties": {
+                        "default": "any"
+                      },
+                      "type": "object"
+                    },
+                    "map_ptr": {
+                      "additionalProperties": {
+                        "default": "any"
+                      },
+                      "type": "object"
+                    },
+                    "slice": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "slice_ptr": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "string": {
+                      "type": "string"
+                    },
+                    "string_ptr": {
+                      "type": "string"
+                    },
+                    "struct": {
+                      "properties": {
+                        "collection": {
+                          "items": {
+                            "maximum": 9223372036854776000,
+                            "minimum": -9223372036854776000,
+                            "type": "integer"
+                          },
+                          "type": "array"
+                        },
+                        "custom_string": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "struct_ptr": {
+                      "properties": {
+                        "collection": {
+                          "items": {
+                            "maximum": 9223372036854776000,
+                            "minimum": -9223372036854776000,
+                            "type": "integer"
+                          },
+                          "type": "array"
+                        },
+                        "custom_string": {
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "uint": {
+                      "maximum": 18446744073709552000,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "uint16": {
+                      "maximum": 65535,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "uint16_ptr": {
+                      "maximum": 65535,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "uint32": {
+                      "format": "int32",
+                      "maximum": 4294967295,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "uint32_ptr": {
+                      "format": "int32",
+                      "maximum": 4294967295,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "uint64": {
+                      "format": "int64",
+                      "maximum": 18446744073709552000,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "uint64_ptr": {
+                      "format": "int64",
+                      "maximum": 18446744073709552000,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "uint8": {
+                      "maximum": 255,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "uint8_ptr": {
+                      "maximum": 255,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "uint_ptr": {
+                      "maximum": 18446744073709552000,
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "details": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "details": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "details": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "full"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080"
+    }
+  ]
+}

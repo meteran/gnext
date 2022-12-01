@@ -79,6 +79,8 @@
                 "schema": {
                   "properties": {
                     "code": {
+                      "maximum": 9223372036854776000,
+                      "minimum": -9223372036854776000,
                       "type": "integer"
                     }
                   },
@@ -93,6 +95,8 @@
                 "schema": {
                   "properties": {
                     "code": {
+                      "maximum": 9223372036854776000,
+                      "minimum": -9223372036854776000,
                       "type": "integer"
                     }
                   },
@@ -107,6 +111,8 @@
                 "schema": {
                   "properties": {
                     "code": {
+                      "maximum": 9223372036854776000,
+                      "minimum": -9223372036854776000,
                       "type": "integer"
                     }
                   },
@@ -247,6 +253,8 @@
                 "schema": {
                   "properties": {
                     "code": {
+                      "maximum": 9223372036854776000,
+                      "minimum": -9223372036854776000,
                       "type": "integer"
                     }
                   },
@@ -261,6 +269,8 @@
                 "schema": {
                   "properties": {
                     "code": {
+                      "maximum": 9223372036854776000,
+                      "minimum": -9223372036854776000,
                       "type": "integer"
                     }
                   },
@@ -275,6 +285,8 @@
                 "schema": {
                   "properties": {
                     "code": {
+                      "maximum": 9223372036854776000,
+                      "minimum": -9223372036854776000,
                       "type": "integer"
                     }
                   },
@@ -345,6 +357,8 @@
                 "schema": {
                   "properties": {
                     "code": {
+                      "maximum": 9223372036854776000,
+                      "minimum": -9223372036854776000,
                       "type": "integer"
                     }
                   },
@@ -359,6 +373,8 @@
                 "schema": {
                   "properties": {
                     "code": {
+                      "maximum": 9223372036854776000,
+                      "minimum": -9223372036854776000,
                       "type": "integer"
                     }
                   },
@@ -373,6 +389,8 @@
                 "schema": {
                   "properties": {
                     "code": {
+                      "maximum": 9223372036854776000,
+                      "minimum": -9223372036854776000,
                       "type": "integer"
                     }
                   },
@@ -498,6 +516,8 @@
                 "schema": {
                   "properties": {
                     "code": {
+                      "maximum": 9223372036854776000,
+                      "minimum": -9223372036854776000,
                       "type": "integer"
                     }
                   },
@@ -512,6 +532,8 @@
                 "schema": {
                   "properties": {
                     "code": {
+                      "maximum": 9223372036854776000,
+                      "minimum": -9223372036854776000,
                       "type": "integer"
                     }
                   },
@@ -526,6 +548,8 @@
                 "schema": {
                   "properties": {
                     "code": {
+                      "maximum": 9223372036854776000,
+                      "minimum": -9223372036854776000,
                       "type": "integer"
                     }
                   },

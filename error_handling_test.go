@@ -10,19 +10,19 @@ import (
 	"testing"
 )
 
-type handler struct {
+type handlerMock struct {
 	called bool
 }
 
-func (h *handler) call() {
+func (h *handlerMock) call() {
 	h.called = true
 }
 
 func TestErrorFallbacksToMiddleware(t *testing.T) {
 	r := Router()
 
-	middlewares := make([]handler, 7)
-	testHandler := handler{}
+	middlewares := make([]handlerMock, 7)
+	testHandler := handlerMock{}
 
 	var (
 		errorFlag bool
@@ -188,9 +188,6 @@ func TestOverrideReturnedResponseAndStatusAfterErrorAndHandlerWithoutResponse(t 
 	assert.Equal(t, 401, response.Code)
 	assert.Equal(t, `{"value":"overridden"}`, response.Body.String())
 }
-
-//go:embed test_data/RouteErrorsToSpecificHandlersExpectedDocs.json
-var routeErrorsToSpecificHandlersExpectedDocs string
 
 func TestRouteErrorsToSpecificHandlers(t *testing.T) {
 	r := Router()
