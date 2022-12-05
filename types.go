@@ -107,7 +107,7 @@ func (m middlewares) count() int {
 type MiddlewareFactory func() Middleware
 
 type DefaultErrorResponse struct {
-	ErrorResponse `status_codes:"4XX,5XX"`
+	ErrorResponse `default_status:"500" status_codes:"4XX,5XX"`
 	Message       string   `json:"message"`
 	Details       []string `json:"details"`
 	Success       bool     `json:"success"`

@@ -33,11 +33,11 @@ func Router(docsOptions ...*docs.Options) *RootRouter {
 
 	return &RootRouter{
 		routerGroup: routerGroup{
-			pathPrefix:   "",
-			rawRouter:    r,
-			middlewares:  nil,
-			Docs:         docs.New(docsOptions[0]),
-			errorHandler: DefaultErrorHandler,
+			pathPrefix:    "",
+			rawRouter:     r,
+			middlewares:   middlewares{},
+			Docs:          docs.New(docsOptions[0]),
+			errorHandlers: newErrorHandlers(),
 		},
 		engine: r,
 	}

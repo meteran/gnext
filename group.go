@@ -4,20 +4,18 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/meteran/gnext/docs"
 	"net/http"
-	"reflect"
 )
 
 type routerGroup struct {
-	pathPrefix   string
-	rawRouter    gin.IRouter
-	middlewares  middlewares
-	Docs         *docs.Docs
-	errorHandler interface{}
+	pathPrefix    string
+	rawRouter     gin.IRouter
+	middlewares   middlewares
+	Docs          *docs.Docs
+	errorHandlers errorHandlers
 }
 
 func (g *routerGroup) OnError(errorHandler interface{}) IRoutes {
-	validateErrorHandler(reflect.TypeOf(errorHandler))
-	g.errorHandler = errorHandler
+	g.errorHandlers.setup(errorHandler)
 	return g
 }
 
@@ -57,7 +55,7 @@ func (g *routerGroup) POST(path string, handler interface{}, doc ...*docs.Endpoi
 }
 
 func (g *routerGroup) Handle(method string, path string, handler interface{}, doc ...*docs.Endpoint) IRoutes {
-	wrapper := WrapHandler(method, g.fullPath(path), g.middlewares, g.Docs, handler, g.errorHandler, doc...)
+	wrapper := WrapHandler(method, g.fullPath(path), g.middlewares, g.Docs, handler, g.errorHandlers, doc...)
 	g.rawRouter.Handle(method, path, wrapper.requestHandler)
 	return g
 }
@@ -69,11 +67,11 @@ func (g *routerGroup) Use(middleware Middleware) IRoutes {
 
 func (g *routerGroup) Group(prefix string, _ ...*docs.Endpoint) IRouter {
 	return &routerGroup{
-		pathPrefix:   g.fullPath(prefix),
-		rawRouter:    g.rawRouter.Group(prefix),
-		middlewares:  g.middlewares.copy(),
-		Docs:         g.Docs,
-		errorHandler: g.errorHandler,
+		pathPrefix:    g.fullPath(prefix),
+		rawRouter:     g.rawRouter.Group(prefix),
+		middlewares:   g.middlewares.copy(),
+		Docs:          g.Docs,
+		errorHandlers: g.errorHandlers.copy(),
 	}
 }
 

@@ -5,28 +5,28 @@ import (
 	"runtime/debug"
 )
 
-func NewHandlerCaller(receiver reflect.Value) *HandlerCaller {
-	return &HandlerCaller{
+func newHandlerCaller(receiver reflect.Value) *handlerCaller {
+	return &handlerCaller{
 		receiver: receiver,
 	}
 }
 
-type HandlerCaller struct {
+type handlerCaller struct {
 	receiver    reflect.Value
 	argBuilders []argBuilder
 	argSetters  []argSetter
 	errorIndex  int
 }
 
-func (c *HandlerCaller) addSetter(setter argSetter) {
+func (c *handlerCaller) addSetter(setter argSetter) {
 	c.argSetters = append(c.argSetters, setter)
 }
 
-func (c *HandlerCaller) addBuilder(b argBuilder) {
+func (c *handlerCaller) addBuilder(b argBuilder) {
 	c.argBuilders = append(c.argBuilders, b)
 }
 
-func (c *HandlerCaller) call(ctx *callContext) {
+func (c *handlerCaller) call(ctx *callContext) {
 	defer func() {
 		if e := recover(); e != nil {
 			errValue := reflect.ValueOf(&HandlerPanicked{

@@ -1,25 +1,28 @@
 package gnext
 
 import (
+	_ "embed"
+	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
 )
 
-type handler struct {
+type handlerMock struct {
 	called bool
 }
 
-func (h *handler) call() {
+func (h *handlerMock) call() {
 	h.called = true
 }
 
 func TestErrorFallbacksToMiddleware(t *testing.T) {
 	r := Router()
 
-	middlewares := make([]handler, 7)
-	testHandler := handler{}
+	middlewares := make([]handlerMock, 7)
+	testHandler := handlerMock{}
 
 	var (
 		errorFlag bool
@@ -184,4 +187,140 @@ func TestOverrideReturnedResponseAndStatusAfterErrorAndHandlerWithoutResponse(t 
 	response := makeRequest(t, r, http.MethodGet, "/path")
 	assert.Equal(t, 401, response.Code)
 	assert.Equal(t, `{"value":"overridden"}`, response.Body.String())
+}
+
+func TestRouteErrorsToSpecificHandlers(t *testing.T) {
+	r := Router()
+
+	type globalError struct{ error }
+	type specificError struct{ error }
+	type unknownError struct{ error }
+
+	type globalResponse struct {
+		ErrorResponse `default_status:"501" status_codes:"502"`
+		Message       string `json:"message"`
+	}
+
+	type specificResponse struct {
+		ErrorResponse `default_status:"400" status_codes:"401,403"`
+		Code          int `json:"code"`
+	}
+
+	type overwritingResponse struct {
+		ErrorResponse `default_status:"422"`
+		Error         string `json:"error"`
+	}
+
+	fallbackResp := "fallback"
+	globalResp := &globalResponse{Message: "global"}
+	specificResp := &specificResponse{Code: 10}
+	overwritingResp := &overwritingResponse{Error: "overwriting"}
+
+	// error handlers
+	fallbackHandler := func(err error) (string, Status) {
+		return fallbackResp, 404
+	}
+
+	globalHandler := func(err *globalError) *globalResponse {
+		return globalResp
+	}
+
+	specificHandler := func(err *specificError) (*specificResponse, Status) {
+		return specificResp, 401
+	}
+
+	overwritingHandler := func(err *specificError) *overwritingResponse {
+		return overwritingResp
+	}
+
+	// handlers
+	handlerRaisingUnknownError := func() (interface{}, error) {
+		return nil, &unknownError{fmt.Errorf("unknown")}
+	}
+
+	handlerRaisingGlobalError := func() (interface{}, error) {
+		return nil, &globalError{fmt.Errorf("globalError")}
+	}
+
+	handlerRaisingSpecificError := func() (interface{}, error) {
+		return nil, &specificError{fmt.Errorf("specificError")}
+	}
+
+	// routes
+	r.GET("/unknown-default", handlerRaisingUnknownError)
+	r.OnError(globalHandler)
+	r.OnError(fallbackHandler)
+	r.GET("/unknown-fallback", handlerRaisingUnknownError)
+	r.GET("/global-global", handlerRaisingGlobalError)
+	r.GET("/specific-fallback", handlerRaisingSpecificError)
+	r.OnError(specificHandler)
+	r.GET("/specific-specific", handlerRaisingSpecificError)
+	group := r.Group("/grouped")
+	group.GET("/unknown-fallback", handlerRaisingUnknownError)
+	group.GET("/global-global", handlerRaisingGlobalError)
+	group.GET("/specific-specific", handlerRaisingSpecificError)
+	group.OnError(overwritingHandler)
+	group.GET("/specific-overwriting", handlerRaisingSpecificError)
+
+	docs, err := json.Marshal(r.Docs.OpenApi)
+	require.NoError(t, err)
+	assert.JSONEq(t, routeErrorsToSpecificHandlersExpectedDocs, string(docs))
+
+	cases := []struct {
+		path     string
+		status   int
+		response string
+	}{
+		{
+			path:     "/unknown-default",
+			status:   500,
+			response: `{"details": null, "message": "internal server error", "success": false}`,
+		},
+		{
+			path:     "/unknown-fallback",
+			status:   404,
+			response: `"fallback"`,
+		},
+		{
+			path:     "/global-global",
+			status:   501,
+			response: `{"message":"global"}`,
+		},
+		{
+			path:     "/specific-fallback",
+			status:   404,
+			response: `"fallback"`,
+		},
+		{
+			path:     "/specific-specific",
+			status:   401,
+			response: `{"code": 10}`,
+		},
+		{
+			path:     "/grouped/unknown-fallback",
+			status:   404,
+			response: `"fallback"`,
+		},
+		{
+			path:     "/grouped/global-global",
+			status:   501,
+			response: `{"message":"global"}`,
+		},
+		{
+			path:     "/grouped/specific-specific",
+			status:   401,
+			response: `{"code": 10}`,
+		},
+		{
+			path:     "/grouped/specific-overwriting",
+			status:   422,
+			response: `{"error": "overwriting"}`,
+		},
+	}
+
+	for idx, c := range cases {
+		response := makeRequest(t, r, "GET", c.path)
+		assert.Equalf(t, c.status, response.Code, "case: %d, path: %s", idx, c.path)
+		assert.JSONEqf(t, c.response, response.Body.String(), "case: %d, path: %s", idx, c.path)
+	}
 }
