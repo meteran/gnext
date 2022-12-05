@@ -66,11 +66,12 @@ type Response struct{}
 func (m Response) ResponseDocs() {}
 
 var (
-	queryInterfaceType    = reflect.TypeOf((*QueryInterface)(nil)).Elem()
-	bodyInterfaceType     = reflect.TypeOf((*BodyInterface)(nil)).Elem()
-	errorInterfaceType    = reflect.TypeOf((*error)(nil)).Elem()
-	responseInterfaceType = reflect.TypeOf((*ResponseInterface)(nil)).Elem()
-	headersInterfaceType  = reflect.TypeOf((*HeadersInterface)(nil)).Elem()
+	queryInterfaceType         = reflect.TypeOf((*QueryInterface)(nil)).Elem()
+	bodyInterfaceType          = reflect.TypeOf((*BodyInterface)(nil)).Elem()
+	errorInterfaceType         = reflect.TypeOf((*error)(nil)).Elem()
+	errorResponseInterfaceType = reflect.TypeOf((*ErrorResponse)(nil)).Elem()
+	responseInterfaceType      = reflect.TypeOf((*ResponseInterface)(nil)).Elem()
+	headersInterfaceType       = reflect.TypeOf((*HeadersInterface)(nil)).Elem()
 
 	rawContextType = reflect.TypeOf(&gin.Context{})
 	headersType    = reflect.TypeOf(Headers{})
@@ -84,10 +85,29 @@ type Middleware struct {
 	After  interface{}
 }
 
+type middlewares []*Middleware
+
+func (m middlewares) copy() middlewares {
+	return append(middlewares{}, m...)
+}
+
+func (m middlewares) count() int {
+	count := 0
+	for _, middleware := range m {
+		if middleware.Before != nil {
+			count++
+		}
+		if middleware.After != nil {
+			count++
+		}
+	}
+	return count
+}
+
 type MiddlewareFactory func() Middleware
 
 type DefaultErrorResponse struct {
-	ErrorResponse `status_codes:"4XX,5XX"`
+	ErrorResponse `default_status:"500" status_codes:"4XX,5XX"`
 	Message       string   `json:"message"`
 	Details       []string `json:"details"`
 	Success       bool     `json:"success"`

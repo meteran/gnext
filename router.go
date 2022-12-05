@@ -33,11 +33,11 @@ func Router(docsOptions ...*docs.Options) *RootRouter {
 
 	return &RootRouter{
 		routerGroup: routerGroup{
-			pathPrefix:   "",
-			rawRouter:    r,
-			middlewares:  nil,
-			Docs:         docs.New(docsOptions[0]),
-			errorHandler: DefaultErrorHandler,
+			pathPrefix:    "",
+			rawRouter:     r,
+			middlewares:   middlewares{},
+			Docs:          docs.New(docsOptions[0]),
+			errorHandlers: newErrorHandlers(),
 		},
 		engine: r,
 	}
@@ -53,16 +53,16 @@ type RootRouter struct {
 // Engine returns the raw Gin engine.
 // It can be used to add Gin-native handlers or middlewares.
 //
-// Note: handlers and middleware attached directly to the raw engine, bypasses the gNext core. Because of that they won't be included in the docs nor validation mechanism.
+// Note: handlers and middlewares attached directly to the raw engine bypasses the gNext core. Because of that they won't be included in the docs nor validation mechanism.
 func (r *RootRouter) Engine() *gin.Engine {
 	return r.engine
 }
 
 // Run starts the http server. It takes optional address parameters. The number of parameters is meaningful:
-//  * 0 - defaults to ":8080".
-//  * 1 - means the given address is either a full address in form 'host:port` or, if doesn't contain ':',  a port.
-//  * 2 - first parameter is a host, the latter one is a port.
-//  * 3+ - invalid address.
+//   - 0 - defaults to ":8080".
+//   - 1 - means the given address is either a full address in form 'host:port` or, if doesn't contain ':',  a port.
+//   - 2 - first parameter is a host, the latter one is a port.
+//   - 3+ - invalid address.
 func (r *RootRouter) Run(address ...string) error {
 	host, port := resolveAddress(address)
 	r.Docs.RegisterRoutes(r.rawRouter, port)
@@ -78,6 +78,10 @@ func (r *RootRouter) Run(address ...string) error {
 
 	log.Printf("starting server on http://%s:%s", host, port)
 	return srv.ListenAndServe()
+}
+
+func (r *RootRouter) ServeHTTP(response http.ResponseWriter, req *http.Request) {
+	r.engine.ServeHTTP(response, req)
 }
 
 func resolveAddress(address []string) (string, string) {

@@ -2,11 +2,21 @@
 
 ---
 
-## gNext v0.6.0 (01.05.2022) Latest
+## gNext v0.7.0 (05.12.2022) Latest
+
+  * [NEW] Error handlers dedicated for specific types of errors
+  * [NEW] Generate docs for all error handlers responses
+  * [FIX] Primitive custom types are now allowed in payloads
+  * [EDIT] Switch from one to multiple error handlers
+  * [EDIT] Fallback to middlewares after error handling
+
+---
+
+## gNext v0.6.0 (01.05.2022)
 
   * [FIX] Handler without response body
   * [FIX] Error value setter
-  * [EDIT] `RootRouter` interface, raw router is now accesible
+  * [EDIT] `RootRouter` interface, raw router is now accessible
   * [EDIT] Extend documentation
 
 ---
