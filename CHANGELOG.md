@@ -2,7 +2,7 @@
 
 ---
 
-## gNext v0.7.0 (-) Latest
+## gNext v0.7.0 (05.12.2022) Latest
 
   * [NEW] Error handlers dedicated for specific types of errors
   * [NEW] Generate docs for all error handlers responses
