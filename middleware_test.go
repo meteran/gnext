@@ -187,9 +187,9 @@ func TestAfterMiddlewareUsingOtherAfterMiddlewareContext(t *testing.T) {
 	}
 
 	thirdMiddleware := Middleware{
-		After: func(firstMiddlewareCtx *firstMiddlewareContext, secondMiddlewareContext *secondMiddlewareContext) {
+		After: func(firstMiddlewareCtx *firstMiddlewareContext, secondMiddlewareCtx *secondMiddlewareContext) {
 			assert.Equal(t, "changed test value", firstMiddlewareCtx.SomeContextValue)
-			assert.Equal(t, "changed test value", secondMiddlewareContext.SomeContextValue)
+			assert.Equal(t, "changed test value", secondMiddlewareCtx.SomeContextValue)
 		},
 	}
 
