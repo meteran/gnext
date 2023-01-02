@@ -3,7 +3,6 @@ package gnext
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"log"
 	"net/http"
 	"testing"
 )
@@ -174,14 +173,12 @@ func TestAfterMiddlewareUsingOtherAfterMiddlewareContext(t *testing.T) {
 
 	firstMiddleware := Middleware{
 		After: func(firstMiddlewareCtx *firstMiddlewareContext) *firstMiddlewareContext {
-			log.Println("[20327327] first middleware")
 			return firstMiddlewareCtx
 		},
 	}
 
 	secondMiddleware := Middleware{
 		After: func(firstMiddlewareCtx *firstMiddlewareContext) (*firstMiddlewareContext, *secondMiddlewareContext) {
-			log.Println("[2032263226] second middleware")
 			assert.Equal(t, "test", firstMiddlewareCtx.SomeContextValue)
 
 			firstMiddlewareCtx.SomeContextValue = "changed test value"
@@ -191,7 +188,6 @@ func TestAfterMiddlewareUsingOtherAfterMiddlewareContext(t *testing.T) {
 
 	thirdMiddleware := Middleware{
 		After: func(firstMiddlewareCtx *firstMiddlewareContext, secondMiddlewareCtx *secondMiddlewareContext) {
-			log.Println("[2032283228] third middleware")
 			assert.Equal(t, "changed test value", firstMiddlewareCtx.SomeContextValue)
 			assert.Equal(t, "changed test value", secondMiddlewareCtx.SomeContextValue)
 		},
@@ -253,5 +249,8 @@ func TestBeforeAndAfterMiddlewareOrdering(t *testing.T) {
 
 	assert.Equal(t, res.Code, 200)
 	assert.True(t, called)
-
+	assert.True(t, firstBeforeCalled)
+	assert.True(t, secondBeforeCalled)
+	assert.True(t, firstAfterCalled)
+	assert.True(t, secondAfterCalled)
 }
