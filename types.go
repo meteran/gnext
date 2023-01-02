@@ -31,47 +31,41 @@ type IRoutes interface {
 type Status int
 
 type HeadersInterface interface {
-	HeadersDocs()
+	GnHeaders()
 }
 type Headers http.Header
 
-func (m Headers) HeadersDocs() {}
+func (m Headers) GnHeaders() {}
 
 type QueryInterface interface {
-	QueryDocs()
+	GnQuery()
 }
 type Query struct{}
 
-func (m Query) QueryDocs() {}
+func (m Query) GnQuery() {}
 
 type BodyInterface interface {
-	BodyDocs()
+	GnBody()
 }
 type Body struct{}
 
-func (m Body) BodyDocs() {}
+func (m Body) GnBody() {}
 
-type ErrorInterface interface {
-	ErrorDocs()
-}
 type ErrorResponse struct{}
 
-func (m ErrorResponse) ErrorDocs() {}
-
 type ResponseInterface interface {
-	ResponseDocs()
+	GnResponse()
 }
 type Response struct{}
 
-func (m Response) ResponseDocs() {}
+func (m Response) GnResponse() {}
 
 var (
-	queryInterfaceType         = reflect.TypeOf((*QueryInterface)(nil)).Elem()
-	bodyInterfaceType          = reflect.TypeOf((*BodyInterface)(nil)).Elem()
-	errorInterfaceType         = reflect.TypeOf((*error)(nil)).Elem()
-	errorResponseInterfaceType = reflect.TypeOf((*ErrorResponse)(nil)).Elem()
-	responseInterfaceType      = reflect.TypeOf((*ResponseInterface)(nil)).Elem()
-	headersInterfaceType       = reflect.TypeOf((*HeadersInterface)(nil)).Elem()
+	queryInterfaceType    = reflect.TypeOf((*QueryInterface)(nil)).Elem()
+	bodyInterfaceType     = reflect.TypeOf((*BodyInterface)(nil)).Elem()
+	errorInterfaceType    = reflect.TypeOf((*error)(nil)).Elem()
+	responseInterfaceType = reflect.TypeOf((*ResponseInterface)(nil)).Elem()
+	headersInterfaceType  = reflect.TypeOf((*HeadersInterface)(nil)).Elem()
 
 	rawContextType = reflect.TypeOf(&gin.Context{})
 	headersType    = reflect.TypeOf(Headers{})
@@ -103,8 +97,6 @@ func (m middlewares) count() int {
 	}
 	return count
 }
-
-type MiddlewareFactory func() Middleware
 
 type DefaultErrorResponse struct {
 	ErrorResponse `default_status:"500" status_codes:"4XX,5XX"`
