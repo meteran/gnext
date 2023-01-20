@@ -21,7 +21,7 @@ and purely focus on the business logic.
 
 You can download gNext and install it in your project by running:
 
-```shell
+```console
 $ go get -u github.com/meteran/gnext
 ```
 
@@ -33,11 +33,11 @@ to [get started with Go](https://go.dev/doc/tutorial/getting-started).
 
 Ok, so let's create a project:
 
-```shell
-mkdir gnext-example
-cd gnext-example
-go mod init example.com/gnext
-go get github.com/meteran/gnext
+```console
+$ mkdir gnext-example
+$ cd gnext-example
+$ go mod init example.com/gnext
+$ go get github.com/meteran/gnext
 ```
 
 Create a file `example.go` and fill it up with the following code:
@@ -60,8 +60,8 @@ func main() {
 
 Run it:
 
-```shell
-go run example
+```console
+$ go run example
 ```
 
 Now you can visit this link in your browser: http://localhost:8080/example
@@ -103,8 +103,8 @@ documented. That's the real power!
 
 The POST request without required `id` now fails with the validation error:
 
-```shell
-curl --request POST http://localhost:8080/example --data '{"name": "some name"}'
+```console
+$ curl --request POST http://localhost:8080/example --data '{"name": "some name"}'
 ```
 
 gives output:
@@ -121,8 +121,8 @@ gives output:
 
 the valid request:
 
-```shell
-curl --request POST http://localhost:8080/example --data '{"name": "some name", "id": 4}'
+```console
+$ curl --request POST http://localhost:8080/example --data '{"name": "some name", "id": 4}'
 ```
 
 gives us the expected response:

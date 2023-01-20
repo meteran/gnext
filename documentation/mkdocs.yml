@@ -1,5 +1,28 @@
 site_name: gNext
 theme:
   name: material
+  palette:
+    - media: '(prefers-color-scheme: light)'
+      scheme: default
+#      primary: 5DC9E2
+#      accent: lime
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: '(prefers-color-scheme: dark)'
+      scheme: slate
+#      primary: teal
+#      accent: amber
+      toggle:
+        icon: material/white-balance-sunny
+        name: Switch to light mode
+  features:
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+repo_name: meteran/gnext
+repo_url: https://github.com/meteran/gnext
 plugins:
   - termynal
+extra_css:
+  - stylesheets/colors.css
