@@ -20,6 +20,7 @@ theme:
     - search.suggest
     - search.highlight
     - content.tabs.link
+    - navigation.sections
 repo_name: meteran/gnext
 repo_url: https://github.com/meteran/gnext
 plugins:

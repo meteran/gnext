@@ -1,4 +1,4 @@
-## Url parameters
+## Path parameters
 
 Okay, in the previous section we saw quick use, let's get to specific things 😎
 

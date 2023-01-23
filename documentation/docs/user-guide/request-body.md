@@ -1,4 +1,4 @@
-## Request payload
+# Request body
 
 As you could see in the [quick start](#quick-start) section, you can define the request payload as your own structure.
 It will be parsed then to fill the documentation. When request is made, its body is bound to the given structure using gin-binding module.

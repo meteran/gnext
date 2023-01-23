@@ -1,4 +1,4 @@
-# gNext Web Framework
+# Intro
 
 gNext is a Golang API-focused framework extending [Gin](https://github.com/gin-gonic/gin). Offers the API
 structuring, automates validation and generates documentation. It's compatible with the existing Gin handlers and Gin
@@ -127,4 +127,3 @@ gives us the expected response:
 Congratulations! Now you are prepared for the fast forwarding development of your great API.
 
 _Note:_ all following sections will base on the program from this overview.
-

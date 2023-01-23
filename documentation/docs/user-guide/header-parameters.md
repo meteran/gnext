@@ -1,4 +1,4 @@
-## Request headers
+## Header parameters
 
 It happens that we want to do something with the request `Headers` - nothing difficult.
 
