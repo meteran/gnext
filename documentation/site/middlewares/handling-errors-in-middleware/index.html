@@ -9,22 +9,24 @@
       
       
       
+        <link rel="prev" href="../first-steps/">
       
-        <link rel="next" href="future-ideas/">
       
-      <link rel="icon" href="assets/images/favicon.png">
+        <link rel="next" href="../mixed/">
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.0.6">
     
     
       
-        <title>gNext</title>
+        <title>Handling errors in middleware - gNext</title>
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.558e4712.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.558e4712.min.css">
       
         
-        <link rel="stylesheet" href="assets/stylesheets/palette.2505c338.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.2505c338.min.css">
       
       
 
@@ -40,11 +42,11 @@
       
     
     
-      <link rel="stylesheet" href="stylesheets/colors.css">
+      <link rel="stylesheet" href="../../stylesheets/colors.css">
     
-      <link rel="stylesheet" href="termynal.css">
+      <link rel="stylesheet" href="../../termynal.css">
     
-    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -72,11 +74,6 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
-        
-        <a href="#intro" class="md-skip">
-          Skip to content
-        </a>
-      
     </div>
     <div data-md-component="announce">
       
@@ -87,7 +84,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="." title="gNext" class="md-header__button md-logo" aria-label="gNext" data-md-component="logo">
+    <a href="../.." title="gNext" class="md-header__button md-logo" aria-label="gNext" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
@@ -106,7 +103,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Intro
+              Handling errors in middleware
             
           </span>
         </div>
@@ -172,7 +169,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="." title="gNext" class="md-nav__button md-logo" aria-label="gNext" data-md-component="logo">
+    <a href="../.." title="gNext" class="md-nav__button md-logo" aria-label="gNext" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
@@ -201,59 +198,11 @@
 
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Intro
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="." class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
         Intro
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#installation" class="md-nav__link">
-    Installation
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#quick-start" class="md-nav__link">
-    Quick start
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -266,7 +215,7 @@
   
   
     <li class="md-nav__item">
-      <a href="future-ideas/" class="md-nav__link">
+      <a href="../../future-ideas/" class="md-nav__link">
         Future ideas
       </a>
     </li>
@@ -281,7 +230,7 @@
   
   
     <li class="md-nav__item">
-      <a href="release-notes/" class="md-nav__link">
+      <a href="../../release-notes/" class="md-nav__link">
         Release notes
       </a>
     </li>
@@ -325,7 +274,7 @@
   
   
     <li class="md-nav__item">
-      <a href="advanced-guide/Customize-OpenAPI-content/" class="md-nav__link">
+      <a href="../../advanced-guide/Customize-OpenAPI-content/" class="md-nav__link">
         Customize OpenAPI content
       </a>
     </li>
@@ -339,7 +288,7 @@
   
   
     <li class="md-nav__item">
-      <a href="advanced-guide/gin-context/" class="md-nav__link">
+      <a href="../../advanced-guide/gin-context/" class="md-nav__link">
         Gin context
       </a>
     </li>
@@ -390,7 +339,7 @@
   
   
     <li class="md-nav__item">
-      <a href="examples/auth-middleware/" class="md-nav__link">
+      <a href="../../examples/auth-middleware/" class="md-nav__link">
         Auth middleware
       </a>
     </li>
@@ -404,7 +353,7 @@
   
   
     <li class="md-nav__item">
-      <a href="examples/object-permissions-level-middleware/" class="md-nav__link">
+      <a href="../../examples/object-permissions-level-middleware/" class="md-nav__link">
         Object permissions level middleware
       </a>
     </li>
@@ -418,7 +367,7 @@
   
   
     <li class="md-nav__item">
-      <a href="examples/transaction-per-request-middleware/" class="md-nav__link">
+      <a href="../../examples/transaction-per-request-middleware/" class="md-nav__link">
         Transaction per request middleware
       </a>
     </li>
@@ -438,20 +387,22 @@
 
   
   
+    
+  
   
     
       
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_6" type="checkbox" id="__nav_6" >
+      <input class="md-nav__toggle md-toggle " data-md-toggle="__nav_6" type="checkbox" id="__nav_6" checked>
       
       
       
-        <label class="md-nav__link" for="__nav_6" tabindex="0" aria-expanded="false">
+        <label class="md-nav__link" for="__nav_6" tabindex="0" aria-expanded="true">
           Middlewares
           <span class="md-nav__icon md-icon"></span>
         </label>
@@ -469,7 +420,7 @@
   
   
     <li class="md-nav__item">
-      <a href="middlewares/after/" class="md-nav__link">
+      <a href="../after/" class="md-nav__link">
         After
       </a>
     </li>
@@ -483,7 +434,7 @@
   
   
     <li class="md-nav__item">
-      <a href="middlewares/before/" class="md-nav__link">
+      <a href="../before/" class="md-nav__link">
         Before
       </a>
     </li>
@@ -497,7 +448,7 @@
   
   
     <li class="md-nav__item">
-      <a href="middlewares/first-steps/" class="md-nav__link">
+      <a href="../first-steps/" class="md-nav__link">
         First steps
       </a>
     </li>
@@ -509,11 +460,19 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="middlewares/handling-errors-in-middleware/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         Handling errors in middleware
       </a>
+      
     </li>
   
 
@@ -525,7 +484,7 @@
   
   
     <li class="md-nav__item">
-      <a href="middlewares/mixed/" class="md-nav__link">
+      <a href="../mixed/" class="md-nav__link">
         Mixed
       </a>
     </li>
@@ -576,7 +535,7 @@
   
   
     <li class="md-nav__item">
-      <a href="user-guide/cookie-parameters/" class="md-nav__link">
+      <a href="../../user-guide/cookie-parameters/" class="md-nav__link">
         Cookie parameters
       </a>
     </li>
@@ -590,7 +549,7 @@
   
   
     <li class="md-nav__item">
-      <a href="user-guide/endpoints-groups/" class="md-nav__link">
+      <a href="../../user-guide/endpoints-groups/" class="md-nav__link">
         Endpoints groups
       </a>
     </li>
@@ -604,7 +563,7 @@
   
   
     <li class="md-nav__item">
-      <a href="user-guide/first-steps/" class="md-nav__link">
+      <a href="../../user-guide/first-steps/" class="md-nav__link">
         First steps
       </a>
     </li>
@@ -618,7 +577,7 @@
   
   
     <li class="md-nav__item">
-      <a href="user-guide/handling-errors/" class="md-nav__link">
+      <a href="../../user-guide/handling-errors/" class="md-nav__link">
         Handling errors
       </a>
     </li>
@@ -632,7 +591,7 @@
   
   
     <li class="md-nav__item">
-      <a href="user-guide/header-parameters/" class="md-nav__link">
+      <a href="../../user-guide/header-parameters/" class="md-nav__link">
         Header parameters
       </a>
     </li>
@@ -646,7 +605,7 @@
   
   
     <li class="md-nav__item">
-      <a href="user-guide/middlewares/" class="md-nav__link">
+      <a href="../../user-guide/middlewares/" class="md-nav__link">
         Middlewares
       </a>
     </li>
@@ -660,7 +619,7 @@
   
   
     <li class="md-nav__item">
-      <a href="user-guide/path-parameters/" class="md-nav__link">
+      <a href="../../user-guide/path-parameters/" class="md-nav__link">
         Path parameters
       </a>
     </li>
@@ -674,7 +633,7 @@
   
   
     <li class="md-nav__item">
-      <a href="user-guide/query-parameters/" class="md-nav__link">
+      <a href="../../user-guide/query-parameters/" class="md-nav__link">
         Query parameters
       </a>
     </li>
@@ -688,7 +647,7 @@
   
   
     <li class="md-nav__item">
-      <a href="user-guide/request-body/" class="md-nav__link">
+      <a href="../../user-guide/request-body/" class="md-nav__link">
         Request body
       </a>
     </li>
@@ -702,7 +661,7 @@
   
   
     <li class="md-nav__item">
-      <a href="user-guide/response-errors/" class="md-nav__link">
+      <a href="../../user-guide/response-errors/" class="md-nav__link">
         Response errors
       </a>
     </li>
@@ -716,7 +675,7 @@
   
   
     <li class="md-nav__item">
-      <a href="user-guide/response-model/" class="md-nav__link">
+      <a href="../../user-guide/response-model/" class="md-nav__link">
         Response model
       </a>
     </li>
@@ -730,7 +689,7 @@
   
   
     <li class="md-nav__item">
-      <a href="user-guide/response-status-code/" class="md-nav__link">
+      <a href="../../user-guide/response-status-code/" class="md-nav__link">
         Response status code
       </a>
     </li>
@@ -744,7 +703,7 @@
   
   
     <li class="md-nav__item">
-      <a href="user-guide/router-options/" class="md-nav__link">
+      <a href="../../user-guide/router-options/" class="md-nav__link">
         Router options
       </a>
     </li>
@@ -775,30 +734,6 @@
   
   
   
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#installation" class="md-nav__link">
-    Installation
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#quick-start" class="md-nav__link">
-    Quick start
-  </a>
-  
-</li>
-      
-    </ul>
   
 </nav>
                   </div>
@@ -817,112 +752,7 @@
 
 
 
-<h1 id="intro">Intro</h1>
-<p>gNext is a Golang API-focused framework extending <a href="https://github.com/gin-gonic/gin">Gin</a>. Offers the API
-structuring, automates validation and generates documentation. It's compatible with the existing Gin handlers and Gin
-middlewares. Designed to simplify and boost development of JSON APIs. You can leave generic and boring stuff to gNext
-and purely focus on the business logic.</p>
-<h2 id="installation">Installation</h2>
-<p>You can download gNext and install it in your project by running:</p>
-<p>
-<div class="termy" data-termynal>
-<span data-ty="input">go get -u github.com/meteran/gnext</span>
-<span data-ty="progress"></span>
-<span data-ty></span>
-</div></p>
-<h2 id="quick-start">Quick start</h2>
-<p>This tutorial assumes, that you already have Golang installation and basic knowledge about how to build and run Go
-programs. If this is your first hit with Go, and you feel you have no idea what is happening here, please read how
-to <a href="https://go.dev/doc/tutorial/getting-started">get started with Go</a>.</p>
-<p>Ok, so let's create a project:</p>
-<p>
-<div class="termy" data-termynal>
-<span data-ty="input">mkdir gnext-example</span>
-<span data-ty="input">cd gnext-example</span>
-<span data-ty="input">go mod init example.com/gnext</span>
-<span data-ty="input">go get -u github.com/meteran/gnext</span>
-<span data-ty="progress"></span>
-<span data-ty></span>
-</div></p>
-<p>Create a file <code>example.go</code> and fill it up with the following code:</p>
-<pre><code class="language-go">package main
 
-import &quot;github.com/meteran/gnext&quot;
-
-func main() {
-    r := gnext.Router()
-
-    r.GET(&quot;/example&quot;, func() string {
-        return &quot;Hello World!&quot;
-    })
-
-    _ = r.Run()
-}
-</code></pre>
-<p>Run it:</p>
-<p>
-<div class="termy" data-termynal>
-<span data-ty="input">go run example</span>
-<span data-ty></span>
-</div></p>
-<p>Now you can visit this link in your browser: <a href="http://localhost:8080/example">http://localhost:8080/example</a></p>
-<p>Yes, yes... of course it works, but that's boring... Let's open this page: <a href="http://localhost:8080/docs">http://localhost:8080/docs</a></p>
-<p>Whoa, that was amazing, ...but not very useful.</p>
-<p>Let's try some real example. With request and response. We can modify our handler to use structures:</p>
-<pre><code class="language-go">package main
-
-import &quot;github.com/meteran/gnext&quot;
-
-func main() {
-    r := gnext.Router()
-
-    r.POST(&quot;/example&quot;, handler)
-    _ = r.Run()
-}
-
-type MyRequest struct {
-    Id   int    `json:&quot;id&quot; binding:&quot;required&quot;`
-    Name string `json:&quot;name&quot;`
-}
-
-type MyResponse struct {
-    Result string `json:&quot;result&quot;`
-}
-
-func handler(req *MyRequest) *MyResponse {
-    return &amp;MyResponse{Result: req.Name}
-}
-</code></pre>
-<p>Restart the server and visit the docs page. You can see that request and response of <code>POST /example</code> endpoint are
-documented. That's the real power!</p>
-<p>The POST request without required <code>id</code> now fails with the validation error:</p>
-<p>
-<div class="termy" data-termynal>
-<span data-ty="input">curl --request POST http://localhost:8080/example --data '{&quot;name&quot;: &quot;some name&quot;}'</span>
-<span data-ty></span>
-</div></p>
-<p>gives output:</p>
-<pre><code class="language-json">{
-  &quot;message&quot;: &quot;validation error&quot;,
-  &quot;details&quot;: [
-    &quot;field validation for 'id' failed on the 'required' tag with value ''&quot;
-  ],
-  &quot;success&quot;: false
-}
-</code></pre>
-<p>the valid request:</p>
-<p>
-<div class="termy" data-termynal>
-<span data-ty="input">curl --request POST http://localhost:8080/example --data '{&quot;name&quot;: &quot;some name&quot;, &quot;id&quot;: 4}'</span>
-<span data-ty></span>
-</div></p>
-<p>gives us the expected response:</p>
-<pre><code class="language-json">{
-  &quot;result&quot;: &quot;some name&quot;
-}
-</code></pre>
-<p>Congratulations! Now you are prepared for the fast forwarding development of your great API.</p>
-<p><em>Note:</em> all following sections will base on the program from this overview.</p>
 
 
 
@@ -962,12 +792,12 @@ documented. That's the real power!</p>
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": ".", "features": ["search.suggest", "search.highlight", "content.tabs.link", "navigation.sections"], "search": "assets/javascripts/workers/search.e5c33ebb.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["search.suggest", "search.highlight", "content.tabs.link", "navigation.sections"], "search": "../../assets/javascripts/workers/search.e5c33ebb.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="assets/javascripts/bundle.51d95adb.min.js"></script>
+      <script src="../../assets/javascripts/bundle.51d95adb.min.js"></script>
       
-        <script src="termynal.js"></script>
+        <script src="../../termynal.js"></script>
       
     
   </body>

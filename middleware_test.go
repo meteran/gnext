@@ -50,14 +50,16 @@ func TestBeforeMiddlewareReturnSomeContext(t *testing.T) {
 
 	r := Router()
 	r.Use(middleware)
-	r.GET("/foo", func(someMiddlewareCtx *someMiddlewareContext) {
+	r.GET("/foo", func(someMiddlewareCtx *someMiddlewareContext) string {
 		called = true
 		assert.Equal(t, "test value", someMiddlewareCtx.SomeContextValue)
+		return "value"
 	})
 
 	res := makeRequest(t, r, http.MethodGet, "/foo")
 
 	assert.Equal(t, 200, res.Code)
+	assert.Equal(t, "\"value\"", res.Body.String())
 	assert.True(t, called)
 }
 func TestBeforeMiddlewareUsingOtherBeforeMiddlewareContext(t *testing.T) {
