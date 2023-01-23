@@ -23,7 +23,13 @@ theme:
     - navigation.sections
 repo_name: meteran/gnext
 repo_url: https://github.com/meteran/gnext
-plugins:
-  - termynal
 extra_css:
   - stylesheets/colors.css
+markdown_extensions:
+  - attr_list
+  - md_in_html
+#  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+plugins:
+  - termynal
