@@ -134,4 +134,42 @@ func handler(userId int, actor *User) (*User, gnext.Status) {
 
 gNext has mapped the user object by type `*User`. 
 It recognized, that a middleware has output parameter `*User` and handler has an input parameter of the same type, and it called handler with `*User` value.
+If you want to catch the returned error, you should read about [error handling](/user-guide/handling-errors/) in gNext.
+
+## Metrics and monitoring
+
+Now we would like to monitor our server logging two things - how much time the endpoint execution took and what status code was returned.
+Let's create a new file `metrics.go` and check the returned status code.
+
+```go
+// file: metrics.go
+
+func metricsAfterMiddleware(status gnext.Status) {
+	log.Printf("status: %d", status)
+}
+```
+
+And connect it before the authorization middleware:
+
+```go
+func main() {
+	r := gnext.Router()
+
+	r.Use(gnext.Middleware{
+		After:  metricsAfterMiddleware,
+	})
+
+	r.Use(gnext.Middleware{
+		Before: AuthorizationMiddleware,
+	})
+
+	r.GET("/users/:id/", handler)
+	_ = r.Run("", "8080")
+}
+```
+
+
+
+!!! tip
+    The order of middleware usage determines the order of their execution. 
 
