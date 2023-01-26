@@ -1,4 +1,4 @@
-## Header parameters
+# Headers
 
 It happens that we want to do something with the request `Headers` - nothing difficult.
 
@@ -31,4 +31,4 @@ the response will look like this:
 }
 ```
 
-It's all simple isn't it? Of course you can enter headers in the Swagger interface 🫡
+It's simple, isn't it? Of course, you can enter headers in the Swagger interface 🫡

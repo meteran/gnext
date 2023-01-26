@@ -1,4 +1,4 @@
-## Path parameters
+# Path parameters
 
 Okay, in the previous section we saw quick use, let's get to specific things 😎
 
@@ -7,7 +7,7 @@ First, we'll start with the parameters in the url.
 Using them the standard way is unpleasant, we have to write a piece of code in the handler method just to be able to use
 it knowing the type safely - not cool.
 
-But... Gnext will do it for us 🥳!
+But... gNext will do it for us 🥳!
 
 Let's see, I'll add a new endpoint with parameter and add handler method to it:
 

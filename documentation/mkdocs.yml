@@ -21,6 +21,8 @@ theme:
     - search.highlight
     - content.tabs.link
     - navigation.sections
+    - content.code.copy
+    - content.code.annotate
 repo_name: meteran/gnext
 repo_url: https://github.com/meteran/gnext
 extra_css:
@@ -28,8 +30,31 @@ extra_css:
 markdown_extensions:
   - attr_list
   - md_in_html
-#  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
   - admonition
   - pymdownx.details
+nav:
+  - index.md
+  - first-steps.md
+  - User Guide:
+      - user-guide/request-body.md
+      - user-guide/query-parameters.md
+      - user-guide/path-parameters.md
+      - user-guide/headers.md
+      - user-guide/response-status-code.md
+      - user-guide/endpoint-groups.md
+      - user-guide/middlewares.md
+      - user-guide/error-handling.md
+  - Advanced:
+      - advanced-guide/gin-context.md
 plugins:
   - termynal
+  - search

@@ -1,8 +1,6 @@
-## Gin context
+# Gin context
 
-It may happen that we need to get directly to the gin request context. If so, just add ```*gin.Context``` to handler's arguments.
-
-Let's have a look at an example:
+It is possible to use the raw gin context. Just add to your middleware/handler an argument of type `*gin.Context`:
 
 ```go
 func getShopsList(c *gin.Context, q *ShopQuery, h *MyHeaders) (*MyResponse, gnext.Status){
@@ -10,18 +8,3 @@ func getShopsList(c *gin.Context, q *ShopQuery, h *MyHeaders) (*MyResponse, gnex
 }
 ```
 
-Ok, now restart the server and use endpoint:
-
-```console
-$ curl -X 'GET' \
-  'http://localhost:8080/shops/' \
-  -H 'accept: application/json'
-```
-
-the response will look like this:
-
-```json
-{
-  "result": "GET"
-}
-```

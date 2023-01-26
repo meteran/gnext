@@ -1,4 +1,4 @@
-## Response status codes
+# Response status codes
 
 In this section we will show you returning statuses with gNext 🙌.
 

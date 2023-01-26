@@ -1,4 +1,4 @@
-## Query parameters
+# Query parameters
 
 Okay, let's move on to a topic with a similar problem as in the previous section - Query parameters.
 

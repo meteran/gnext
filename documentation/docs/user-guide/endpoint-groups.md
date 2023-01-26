@@ -1,8 +1,8 @@
-## Endpoint groups
+# Endpoint groups
 
 As in the standard GinGonic and many frameworks, we support Endpoint Groups.
 
-We use them not only for structuring, we can also add gnext middleware or gnext error handler to them.
+We use them not only for structuring, we can also add gNext middleware or gNext error handler to them.
 
 Let's have a look at a simple example to create a group:
 
