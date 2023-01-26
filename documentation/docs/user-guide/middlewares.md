@@ -156,9 +156,8 @@ func main() {
 
 If we make a call to our endpoint, the metrics middleware will be executed after the handler, and will get the HTTP status code which is supposed to be returned.
 
-It is worth to notice, that new middleware is registered before the authorization one. 
-Now it is not so important, cause one is called before, and one after the handler, so the order doesn't change anything.
-But in next step you will see why they should be connected this way.
+!!! note "Note" 
+    Metrics middleware is registered before the authorization one. This will be important later.
 
 That was quite easy, because we implemented stateless middleware. 
 To calculate how much time the request took, we need to forward the start time from one middleware to another.
