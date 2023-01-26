@@ -8,6 +8,8 @@
       
       
       
+        <link rel="canonical" href="https://meteran.github.io/gnext/documentation/site/user-guide/middlewares/">
+      
       
         <link rel="prev" href="../endpoint-groups/">
       
@@ -674,7 +676,7 @@ Knowing that, we can modify our handler to take a current user (recognized by a 
 </code></pre></div>
 <p>gNext has mapped the user object by type <code>*User</code>. 
 It recognized, that a middleware has output parameter <code>*User</code> and handler has an input parameter of the same type, and it called handler with <code>*User</code> value.
-If you want to catch the returned error, you should read about <a href="/user-guide/handling-errors/">error handling</a> in gNext.</p>
+If you want to catch the returned error, you should read about <a href="../error-handling/">error handling</a> in gNext.</p>
 <h2 id="metrics-and-monitoring">Metrics and monitoring</h2>
 <p>Now we would like to monitor our server logging two things - how much time the endpoint execution took and what status code was returned.
 We will start from status code. Let's create a new file <code>metrics.go</code> and log the returned status code.</p>

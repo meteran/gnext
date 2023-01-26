@@ -1,4 +1,5 @@
 site_name: gNext
+site_url: https://meteran.github.io/gnext/documentation/site/
 theme:
   name: material
   palette:

@@ -122,7 +122,7 @@ func handler(userId int, actor *User) (*User, gnext.Status) {
 
 gNext has mapped the user object by type `*User`. 
 It recognized, that a middleware has output parameter `*User` and handler has an input parameter of the same type, and it called handler with `*User` value.
-If you want to catch the returned error, you should read about [error handling](/user-guide/handling-errors/) in gNext.
+If you want to catch the returned error, you should read about [error handling](../error-handling/) in gNext.
 
 ## Metrics and monitoring
 

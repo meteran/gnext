@@ -8,6 +8,8 @@
       
       
       
+        <link rel="canonical" href="https://meteran.github.io/gnext/documentation/site/user-guide/request-body/">
+      
       
         <link rel="prev" href="../../first-steps/">
       
@@ -512,10 +514,10 @@
 
 
 <h1 id="request-body">Request body</h1>
-<p>As you could see in the <a href="/first-steps/">First steps</a> section, you can define the request payload as your own structure.
+<p>As you could see in the <a href="../../first-steps/">First steps</a> section, you can define the request payload as your own structure.
 It will be parsed then to fill the documentation. When request is made, its body is bound to the given structure using gin-binding module.
 This implies body validation using the <a href="https://github.com/go-playground/validator">validator package</a>.
-If there is a validation error, the error from gin's <code>Context.ShouldBindWith</code> method will be raised. Be sure, you have an <a href="/user-guide/error-handling/">error handler</a> listening on such errors.</p>
+If there is a validation error, the error from gin's <code>Context.ShouldBindWith</code> method will be raised. Be sure, you have an <a href="../error-handling/">error handler</a> listening on such errors.</p>
 <p>Because the handler arguments can be mixed, gNext has to recognize which parameter should be bound to the body.
 To mark structure as a request body, use a base struct inside:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">type</span><span class="w"> </span><span class="nx">MyRequest</span><span class="w"> </span><span class="kd">struct</span><span class="w"> </span><span class="p">{</span>
