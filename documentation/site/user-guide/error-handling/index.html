@@ -76,6 +76,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#error-handling" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -402,10 +407,64 @@
       <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
       
       
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Error handling
+          <span class="md-nav__icon md-icon"></span>
+        </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
         Error handling
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#in-general" class="md-nav__link">
+    In general
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#default-handler" class="md-nav__link">
+    Default handler
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-response" class="md-nav__link">
+    Error response
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#http-status" class="md-nav__link">
+    HTTP status
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -486,6 +545,44 @@
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#in-general" class="md-nav__link">
+    In general
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#default-handler" class="md-nav__link">
+    Default handler
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-response" class="md-nav__link">
+    Error response
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#http-status" class="md-nav__link">
+    HTTP status
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -504,7 +601,90 @@
 
 
 
-<p>TBD</p>
+<h1 id="error-handling">Error handling</h1>
+<h2 id="in-general">In general</h2>
+<p>Whenever a middleware or handler returns a value which implements <code>error</code> interface, the execution flow is frozen and appropriate error handler is called.
+To create an error handler, you need to implement a function with the following  rules:</p>
+<ol>
+<li>Takes exactly one argument, which type implements <code>error</code> interface.</li>
+<li>Can not return an <code>error</code>.</li>
+<li>Values returned from error handler behave similarly like from a middleware.</li>
+<li>Should return a response, because the handler might not be called.</li>
+</ol>
+<p>The simplest example can look like:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">func</span><span class="w"> </span><span class="nx">errorHandler</span><span class="p">(</span><span class="nx">err</span><span class="w"> </span><span class="kt">error</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">gnext</span><span class="p">.</span><span class="nx">Status</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">err</span><span class="p">.</span><span class="nx">Error</span><span class="p">(),</span><span class="w"> </span><span class="mi">500</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">}</span>
+</code></pre></div>
+<p>Register it in the router:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nx">r</span><span class="p">.</span><span class="nx">OnError</span><span class="p">(</span><span class="nx">errorHandler</span><span class="p">)</span>
+</code></pre></div>
+<p>Now every returned error will be handled by our custom error handler.</p>
+<h2 id="default-handler">Default handler</h2>
+<p>If you don't register any error handler, the default one will be called, which gracefully handles the following errors:</p>
+<ul>
+<li><code>*json.SyntaxError</code></li>
+<li><code>*json.UnmarshalTypeError</code></li>
+<li><code>validator.ValidationErrors</code></li>
+<li><code>*gnext.NotFound</code></li>
+</ul>
+<p>You probably noticed, that in documentation of your API, next to your response, there are error responses. 
+They come from the default error handler definition which returns the following response struct:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kd">type</span><span class="w"> </span><span class="nx">DefaultErrorResponse</span><span class="w"> </span><span class="kd">struct</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="nx">ErrorResponse</span><span class="w"> </span><span class="s">`default_status:&quot;500&quot; status_codes:&quot;4XX,5XX&quot;`</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nx">Message</span><span class="w">       </span><span class="kt">string</span><span class="w">   </span><span class="s">`json:&quot;message&quot;`</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nx">Details</span><span class="w">       </span><span class="p">[]</span><span class="kt">string</span><span class="w"> </span><span class="s">`json:&quot;details&quot;`</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="nx">Success</span><span class="w">       </span><span class="kt">bool</span><span class="w">     </span><span class="s">`json:&quot;success&quot;`</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="p">}</span>
+</code></pre></div>
+<p>There are 3 status codes defined in response above. 
+That's why in your documentation there are <code>500</code>, <code>4XX</code> and <code>5XX</code> status codes with the response scheme above.</p>
+<h2 id="error-response">Error response</h2>
+<p>In order to document error response scheme, you need to define a response structure.
+It will be similar to the one in <a href="#default-handler">default response</a>.
+Example:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">type</span><span class="w"> </span><span class="nx">MyResponse</span><span class="w"> </span><span class="kd">struct</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="nx">Message</span><span class="w">       </span><span class="kt">string</span><span class="w">   </span><span class="s">`json:&quot;message&quot;`</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="nx">Success</span><span class="w">       </span><span class="kt">bool</span><span class="w">     </span><span class="s">`json:&quot;success&quot;`</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="http-status">HTTP status</h2>
+<p>You can define HTTP status returned together with the error response just inside a struct.
+To do that, you need to mark your struct as an error response and add <code>default_status</code> tag.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kd">type</span><span class="w"> </span><span class="nx">MyResponse</span><span class="w"> </span><span class="kd">struct</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="nx">gnext</span><span class="p">.</span><span class="nx">ErrorResponse</span><span class="w"> </span><span class="s">`default_status:&quot;422&quot;`</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="nx">Message</span><span class="w">             </span><span class="s">`json:&quot;message&quot;`</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="p">}</span>
+</code></pre></div>
+<p>Now, you can simplify your error handler and don't return a status:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kd">func</span><span class="w"> </span><span class="nx">errorHandler</span><span class="p">(</span><span class="nx">err</span><span class="w"> </span><span class="kt">error</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="nx">MyResponse</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="o">&amp;</span><span class="nx">MyResponse</span><span class="p">{</span><span class="nx">Message</span><span class="p">:</span><span class="w"> </span><span class="nx">err</span><span class="p">.</span><span class="nx">Error</span><span class="p">()}</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="p">}</span>
+</code></pre></div>
+<p>gNext will document <code>MyResponse</code> scheme under <code>422</code> HTTP status code. It will also use it in response as a default status code.
+You can override it, by returning <code>gnext.Status</code> from handler:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kd">func</span><span class="w"> </span><span class="nx">errorHandler</span><span class="p">(</span><span class="nx">err</span><span class="w"> </span><span class="kt">error</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="nx">MyResponse</span><span class="p">,</span><span class="w"> </span><span class="nx">gnext</span><span class="p">.</span><span class="nx">Status</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="nx">response</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="o">&amp;</span><span class="nx">MyResponse</span><span class="p">{</span><span class="nx">Message</span><span class="p">:</span><span class="w"> </span><span class="nx">err</span><span class="p">.</span><span class="nx">Error</span><span class="p">()}</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="nx">response</span><span class="p">.</span><span class="nx">Message</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s">&quot;not found&quot;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">response</span><span class="p">,</span><span class="w"> </span><span class="mi">404</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">response</span><span class="p">,</span><span class="w"> </span><span class="mi">400</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="p">}</span>
+</code></pre></div>
+<p>This will return <code>404</code> HTTP status code if the error message is <code>not found</code>. However, <code>404</code> code won't be documented.
+To add additional status codes to documentation, you need to write comma-separated statuses to <code>status_codes</code> tag of <code>gnext.ErrorResponse</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kd">type</span><span class="w"> </span><span class="nx">MyResponse</span><span class="w"> </span><span class="kd">struct</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span><span class="nx">gnext</span><span class="p">.</span><span class="nx">ErrorResponse</span><span class="w"> </span><span class="s">`default_status:&quot;422&quot; status_codes:&quot;400,404&quot;`</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="nx">Message</span><span class="w">             </span><span class="s">`json:&quot;message&quot;`</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="p">}</span>
+</code></pre></div>
+<p>Now you will see the error response with all three codes.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>OpenAPI v3 scheme keeps responses in a map: status code -&gt; response schema. 
+This means, it is not possible to document more than one response scheme for one status code.
+If you register more than one response with the same status code, the random one will be exposed in documentation.</p>
+</div>
 
 
 
@@ -544,7 +724,7 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["search.suggest", "search.highlight", "content.tabs.link", "navigation.sections", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.e5c33ebb.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["search.suggest", "search.highlight", "content.tabs.link", "navigation.sections", "navigation.instant", "content.code.copy", "content.code.annotate", "toc.follow"], "search": "../../assets/javascripts/workers/search.e5c33ebb.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.51d95adb.min.js"></script>

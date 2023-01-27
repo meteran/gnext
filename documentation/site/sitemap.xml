@@ -2,57 +2,57 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://meteran.github.io/gnext/documentation/site/</loc>
-         <lastmod>2023-01-26</lastmod>
+         <lastmod>2023-01-27</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://meteran.github.io/gnext/documentation/site/first-steps/</loc>
-         <lastmod>2023-01-26</lastmod>
+         <lastmod>2023-01-27</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://meteran.github.io/gnext/documentation/site/advanced-guide/gin-context/</loc>
-         <lastmod>2023-01-26</lastmod>
+         <lastmod>2023-01-27</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://meteran.github.io/gnext/documentation/site/user-guide/endpoint-groups/</loc>
-         <lastmod>2023-01-26</lastmod>
+         <lastmod>2023-01-27</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://meteran.github.io/gnext/documentation/site/user-guide/error-handling/</loc>
-         <lastmod>2023-01-26</lastmod>
+         <lastmod>2023-01-27</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://meteran.github.io/gnext/documentation/site/user-guide/headers/</loc>
-         <lastmod>2023-01-26</lastmod>
+         <lastmod>2023-01-27</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://meteran.github.io/gnext/documentation/site/user-guide/middlewares/</loc>
-         <lastmod>2023-01-26</lastmod>
+         <lastmod>2023-01-27</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://meteran.github.io/gnext/documentation/site/user-guide/path-parameters/</loc>
-         <lastmod>2023-01-26</lastmod>
+         <lastmod>2023-01-27</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://meteran.github.io/gnext/documentation/site/user-guide/query-parameters/</loc>
-         <lastmod>2023-01-26</lastmod>
+         <lastmod>2023-01-27</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://meteran.github.io/gnext/documentation/site/user-guide/request-body/</loc>
-         <lastmod>2023-01-26</lastmod>
+         <lastmod>2023-01-27</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://meteran.github.io/gnext/documentation/site/user-guide/response-status-code/</loc>
-         <lastmod>2023-01-26</lastmod>
+         <lastmod>2023-01-27</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
