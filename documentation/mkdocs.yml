@@ -22,8 +22,10 @@ theme:
     - search.highlight
     - content.tabs.link
     - navigation.sections
+    - navigation.instant
     - content.code.copy
     - content.code.annotate
+    - toc.follow
 repo_name: meteran/gnext
 repo_url: https://github.com/meteran/gnext
 extra_css:
