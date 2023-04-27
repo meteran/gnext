@@ -103,7 +103,7 @@ documented. That's the real power!
 
 The POST request without required `id` now fails with the validation error:
 
-```console
+```shell
 curl --request POST http://localhost:8080/example --data '{"name": "some name"}'
 ```
 
