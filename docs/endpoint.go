@@ -244,17 +244,17 @@ func structToSchema(type_ reflect.Type) *openapi3.Schema {
 }
 
 func getStatusCodes(type_ reflect.Type) []string {
-	var errorCodes []string
+	var codes []string
 	type_ = directType(type_)
 	if type_.Kind() == reflect.Struct {
 		for i := 0; i < type_.NumField(); i++ {
 			field := type_.Field(i)
-			if errorCodesTag, exists := field.Tag.Lookup(statusCodesTag); exists {
-				errorCodes = append(errorCodes, strings.Split(errorCodesTag, ",")...)
+			if codesTag, exists := field.Tag.Lookup(statusCodesTag); exists {
+				codes = append(codes, strings.Split(codesTag, ",")...)
 			}
 		}
 	}
-	return errorCodes
+	return codes
 }
 
 func typeAsString(t reflect.Type) string {
