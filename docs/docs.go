@@ -104,8 +104,8 @@ func (d *Docs) PathItem(path string) *openapi3.PathItem {
 	return pathItem
 }
 
-func (d *Docs) RegisterRoutes(router gin.IRouter, port string) {
-	handler := NewHandler(d, port)
+func (d *Docs) RegisterRoutes(router gin.IRouter) {
+	handler := NewHandler(d)
 
 	if d.YamlUrl != NoUrl {
 		router.GET(d.YamlUrl, handler.YamlFile)

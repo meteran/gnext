@@ -65,7 +65,7 @@ func (r *RootRouter) Engine() *gin.Engine {
 //   - 3+ - invalid address.
 func (r *RootRouter) Run(address ...string) error {
 	host, port := resolveAddress(address)
-	r.Docs.RegisterRoutes(r.rawRouter, port)
+	r.Docs.RegisterRoutes(r.rawRouter)
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf("%s:%s", host, port),
@@ -80,6 +80,8 @@ func (r *RootRouter) Run(address ...string) error {
 	return srv.ListenAndServe()
 }
 
+// ServeHTTP executes the request from `req`, runs handlers and writes response to the `response` parameter.
+// It is typically used testing purpose.
 func (r *RootRouter) ServeHTTP(response http.ResponseWriter, req *http.Request) {
 	r.engine.ServeHTTP(response, req)
 }
