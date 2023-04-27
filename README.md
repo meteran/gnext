@@ -21,7 +21,7 @@ and purely focus on the business logic.
 
 You can download gNext and install it in your project by running:
 
-```console
+```shell
 go get -u github.com/meteran/gnext
 ```
 
@@ -33,7 +33,7 @@ to [get started with Go](https://go.dev/doc/tutorial/getting-started).
 
 Ok, so let's create a project:
 
-```console
+```shell
 mkdir gnext-example
 cd gnext-example
 go mod init example.com/gnext
@@ -60,7 +60,7 @@ func main() {
 
 Run it:
 
-```console
+```shell
 go run example
 ```
 
@@ -121,7 +121,7 @@ gives output:
 
 the valid request:
 
-```console
+```shell
 curl --request POST http://localhost:8080/example --data '{"name": "some name", "id": 4}'
 ```
 
