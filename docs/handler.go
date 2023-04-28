@@ -15,12 +15,11 @@ var docsTemplateStr string
 type Handler struct {
 	docs     *Docs
 	template *template.Template
-	port     string
 }
 
-func NewHandler(docs *Docs, port string) *Handler {
+func NewHandler(docs *Docs) *Handler {
 	tmpl := template.Must(template.New("").Parse(docsTemplateStr))
-	return &Handler{docs: docs, template: tmpl, port: port}
+	return &Handler{docs: docs, template: tmpl}
 }
 
 func (h *Handler) Docs(ctx *gin.Context) {
@@ -29,7 +28,7 @@ func (h *Handler) Docs(ctx *gin.Context) {
 
 	values := map[string]interface{}{
 		"title":   h.docs.OpenApi.Info.Title,
-		"jsonUrl": fmt.Sprintf("http://localhost:%s%s", h.port, h.docs.JsonUrl),
+		"jsonUrl": h.docs.JsonUrl,
 	}
 
 	err := h.template.Execute(ctx.Writer, values)
