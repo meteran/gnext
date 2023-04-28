@@ -2,10 +2,10 @@
 
 ---
 
-## gNext v0.8.0 (XX.XX.2023) Latest
+## gNext v0.8.0 (28.04.2023) Latest
 
 * [EDIT] Use relative path to json docs in interactive documentation
-* [EDIT] Update vulnerable libraries to prevent security issues
+* [FIX] Update vulnerable libraries to prevent security issues
 
 ---
 
