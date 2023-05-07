@@ -43,7 +43,7 @@ func New(options *Options) *Docs {
 		OpenApi: &openapi3.T{
 			OpenAPI: "3.0.0",
 			Info: &openapi3.Info{
-				ExtensionProps: options.ExtensionProps,
+				Extensions:     options.ExtensionProps,
 				Title:          options.Title,
 				Description:    options.Description,
 				TermsOfService: options.TermsOfService,
