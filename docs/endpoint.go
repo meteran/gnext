@@ -15,6 +15,9 @@ import (
 type Endpoint openapi3.Operation
 
 func (e *Endpoint) SetTagsFromPath(path string) {
+	if e.Tags != nil {
+		return
+	}
 	pathNormalWords := strings.Split(path, "/")
 	for _, word := range pathNormalWords {
 		if !strings.Contains(word, ":") && word != "" {
