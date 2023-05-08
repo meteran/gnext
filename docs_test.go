@@ -1,6 +1,7 @@
 package gnext
 
 import (
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/meteran/gnext/docs"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -42,4 +43,26 @@ func TestInteractiveDocsHandlerReturnsSubstitutedHtml(t *testing.T) {
 </script>
 </body>
 </html>`, response.Body.String())
+}
+
+func TestDocsTags(t *testing.T) {
+	handler := func() string {
+		return "Hello World!"
+	}
+	r := Router()
+	r.POST("/my/example", handler, &docs.Endpoint{Tags: []string{}})
+	r.Group("/my/shops").
+		GET("/list", handler, &docs.Endpoint{Tags: []string{"shops"}}).
+		GET("/shop/:name/", handler)
+
+	r.Docs.RegisterRoutes(r.rawRouter)
+	response := makeRequest(t, r, http.MethodGet, "/docs.json")
+	assert.Equal(t, http.StatusOK, response.Code)
+	doc, err := openapi3.NewLoader().LoadFromData(response.Body.Bytes())
+
+	assert.Equal(t, nil, err)
+
+	assert.Equal(t, []string(nil), doc.Paths["/my/example"].Post.Tags)
+	assert.Equal(t, []string{"shops"}, doc.Paths["/my/shops/list"].Get.Tags)
+	assert.Equal(t, []string{"my", "shops", "shop"}, doc.Paths["/my/shops/shop/{name}/"].Get.Tags)
 }
