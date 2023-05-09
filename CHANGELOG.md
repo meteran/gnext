@@ -2,7 +2,14 @@
 
 ---
 
-## gNext v0.8.0 (28.04.2023) Latest
+## gNext v0.9.0 (09.05.2023) Latest
+
+* [EDIT] Do not generate endpoint tags if are overridden
+* [EDIT] Update openapi library
+
+---
+
+## gNext v0.8.0 (28.04.2023)
 
 * [EDIT] Use relative path to json docs in interactive documentation
 * [FIX] Update vulnerable libraries to prevent security issues
