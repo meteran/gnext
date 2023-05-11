@@ -66,3 +66,96 @@ func TestDocsTags(t *testing.T) {
 	assert.Equal(t, []string{"shops"}, doc.Paths["/my/shops/list"].Get.Tags)
 	assert.Equal(t, []string{"my", "shops", "shop"}, doc.Paths["/my/shops/shop/{name}/"].Get.Tags)
 }
+
+func TestDocsWithoutSecuritySchema(t *testing.T) {
+	handler := func() string {
+		return "Hello World!"
+	}
+	r := Router()
+	r.POST("/my/example", handler)
+
+	r.Docs.RegisterRoutes(r.rawRouter)
+	response := makeRequest(t, r, http.MethodGet, "/docs.json")
+	assert.Equal(t, http.StatusOK, response.Code)
+	doc, err := openapi3.NewLoader().LoadFromData(response.Body.Bytes())
+
+	assert.Equal(t, nil, err)
+
+	assert.Equal(t, openapi3.Components{Extensions: map[string]interface{}{}}, *doc.Components)
+	assert.Equal(t, openapi3.SecurityRequirements(nil), doc.Security)
+}
+
+func TestDocsWithGlobalSecuritySchema(t *testing.T) {
+	handler := func() string {
+		return "Hello World!"
+	}
+	securitySchema := &openapi3.SecuritySchemeRef{
+		Ref:   "",
+		Value: openapi3.NewJWTSecurityScheme(),
+	}
+	securityRequirements := openapi3.NewSecurityRequirements()
+	securityRequirements.With(openapi3.SecurityRequirement{"HTTPBearer": []string{}})
+	r := Router(
+		&docs.Options{
+			Components: openapi3.Components{SecuritySchemes: openapi3.SecuritySchemes{"HTTPBearer": securitySchema}},
+			Security:   *securityRequirements,
+		},
+	)
+	r.POST("/my/example", handler)
+
+	r.Docs.RegisterRoutes(r.rawRouter)
+	response := makeRequest(t, r, http.MethodGet, "/docs.json")
+	assert.Equal(t, http.StatusOK, response.Code)
+	doc, err := openapi3.NewLoader().LoadFromData(response.Body.Bytes())
+
+	assert.Equal(t, nil, err)
+
+	assert.Equal(t, openapi3.Components{
+		Extensions: map[string]interface{}{},
+		SecuritySchemes: openapi3.SecuritySchemes{"HTTPBearer": &openapi3.SecuritySchemeRef{Value: &openapi3.SecurityScheme{
+			Extensions:   map[string]interface{}{},
+			Type:         "http",
+			Scheme:       "bearer",
+			BearerFormat: "JWT",
+		}}},
+	}, *doc.Components)
+	assert.Equal(t, openapi3.SecurityRequirements{openapi3.SecurityRequirement{"HTTPBearer": []string{}}}, doc.Security)
+}
+
+func TestDocsWithEndpointSecuritySchema(t *testing.T) {
+	handler := func() string {
+		return "Hello World!"
+	}
+	securitySchema := &openapi3.SecuritySchemeRef{
+		Ref:   "",
+		Value: openapi3.NewJWTSecurityScheme(),
+	}
+	securityRequirements := openapi3.NewSecurityRequirements()
+	securityRequirements.With(openapi3.SecurityRequirement{"HTTPBearer": []string{}})
+	r := Router(
+		&docs.Options{
+			Components: openapi3.Components{SecuritySchemes: openapi3.SecuritySchemes{"HTTPBearer": securitySchema}},
+		},
+	)
+	r.POST("/my/example1", handler)
+	r.POST("/my/example2", handler, &docs.Endpoint{Security: securityRequirements})
+
+	r.Docs.RegisterRoutes(r.rawRouter)
+	response := makeRequest(t, r, http.MethodGet, "/docs.json")
+	assert.Equal(t, http.StatusOK, response.Code)
+	doc, err := openapi3.NewLoader().LoadFromData(response.Body.Bytes())
+
+	assert.Equal(t, nil, err)
+	assert.Equal(t, openapi3.Components{
+		Extensions: map[string]interface{}{},
+		SecuritySchemes: openapi3.SecuritySchemes{"HTTPBearer": &openapi3.SecuritySchemeRef{Value: &openapi3.SecurityScheme{
+			Extensions:   map[string]interface{}{},
+			Type:         "http",
+			Scheme:       "bearer",
+			BearerFormat: "JWT",
+		}}},
+	}, *doc.Components)
+	assert.Equal(t, openapi3.SecurityRequirements(nil), doc.Security)
+	assert.Equal(t, (*openapi3.SecurityRequirements)(nil), doc.Paths["/my/example1"].Post.Security)
+	assert.Equal(t, openapi3.SecurityRequirements{openapi3.SecurityRequirement{"HTTPBearer": []string{}}}, *doc.Paths["/my/example2"].Post.Security)
+}
