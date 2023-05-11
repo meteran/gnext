@@ -85,7 +85,7 @@ type Options struct {
 
 	// Components is specified by OpenAPI/Swagger standard version 3.
 	// It is empty as default.
-	Components openapi3.Components
+	Components *openapi3.Components
 
 	// Security is specified by OpenAPI/Swagger standard version 3.
 	// It is empty as default.

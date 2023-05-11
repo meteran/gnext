@@ -51,7 +51,7 @@ func New(options *Options) *Docs {
 				License:        options.License,
 				Version:        options.Version,
 			},
-			Components: &options.Components,
+			Components: options.Components,
 			Security:   options.Security,
 			Paths:      make(openapi3.Paths),
 			Servers:    servers,
