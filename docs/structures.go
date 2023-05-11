@@ -27,7 +27,7 @@ type Options struct {
 	// ExtensionProps OpenAPI extensions.
 	// It reads/writes all properties with prefix "x-".
 	// It is empty as default.
-	ExtensionProps openapi3.ExtensionProps
+	ExtensionProps map[string]interface{}
 
 	// Title of the documentation.
 	// If not set, the default value is "Documentation".
