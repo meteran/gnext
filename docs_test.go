@@ -56,12 +56,7 @@ func TestDocsTags(t *testing.T) {
 		GET("/list", handler, &docs.Endpoint{Tags: []string{"shops"}}).
 		GET("/shop/:name/", handler)
 
-	r.Docs.RegisterRoutes(r.rawRouter)
-	response := makeRequest(t, r, http.MethodGet, "/docs.json")
-	assert.Equal(t, http.StatusOK, response.Code)
-	doc, err := openapi3.NewLoader().LoadFromData(response.Body.Bytes())
-
-	assert.Equal(t, nil, err)
+	doc := generateDocs(t, r)
 
 	assert.Equal(t, []string(nil), doc.Paths["/my/example"].Post.Tags)
 	assert.Equal(t, []string{"shops"}, doc.Paths["/my/shops/list"].Get.Tags)
@@ -89,8 +84,8 @@ func TestDocsWithoutSecuritySchema(t *testing.T) {
 
 	doc := generateDocs(t, r)
 
-	require.Nil(t, doc.Components)
-	require.Nil(t, doc.Security)
+	assert.Nil(t, doc.Components)
+	assert.Nil(t, doc.Security)
 }
 
 func TestDocsWithGlobalSecuritySchema(t *testing.T) {
@@ -113,7 +108,6 @@ func TestDocsWithGlobalSecuritySchema(t *testing.T) {
 
 	doc := generateDocs(t, r)
 
-	require.NotNil(t, doc.Components)
 	require.Equal(t, openapi3.Components{
 		Extensions: map[string]interface{}{},
 		SecuritySchemes: openapi3.SecuritySchemes{"HTTPBearer": &openapi3.SecuritySchemeRef{Value: &openapi3.SecurityScheme{
@@ -123,7 +117,6 @@ func TestDocsWithGlobalSecuritySchema(t *testing.T) {
 			BearerFormat: "JWT",
 		}}},
 	}, *doc.Components)
-	require.NotNil(t, doc.Security)
 	require.Equal(t, openapi3.SecurityRequirements{openapi3.SecurityRequirement{"HTTPBearer": []string{}}}, doc.Security)
 }
 
@@ -147,7 +140,6 @@ func TestDocsWithEndpointSecuritySchema(t *testing.T) {
 
 	doc := generateDocs(t, r)
 
-	require.NotNil(t, doc.Components)
 	require.Equal(t, openapi3.Components{
 		Extensions: map[string]interface{}{},
 		SecuritySchemes: openapi3.SecuritySchemes{"HTTPBearer": &openapi3.SecuritySchemeRef{Value: &openapi3.SecurityScheme{
@@ -157,8 +149,7 @@ func TestDocsWithEndpointSecuritySchema(t *testing.T) {
 			BearerFormat: "JWT",
 		}}},
 	}, *doc.Components)
-	require.Nil(t, doc.Security)
+	assert.Nil(t, doc.Security)
 	require.Nil(t, doc.Paths["/my/example1"].Post.Security)
-	require.NotNil(t, doc.Paths["/my/example2"].Post.Security)
 	require.Equal(t, openapi3.SecurityRequirements{openapi3.SecurityRequirement{"HTTPBearer": []string{}}}, *doc.Paths["/my/example2"].Post.Security)
 }
