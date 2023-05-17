@@ -82,6 +82,14 @@ type Options struct {
 	// Tags for the documentation.
 	// It is empty as default.
 	Tags []string
+
+	// Components is specified by OpenAPI/Swagger standard version 3.
+	// It is empty as default.
+	Components *openapi3.Components
+
+	// Security is specified by OpenAPI/Swagger standard version 3.
+	// It is empty as default.
+	Security openapi3.SecurityRequirements
 }
 
 var defaultOptions = &Options{
