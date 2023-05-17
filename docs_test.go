@@ -108,7 +108,7 @@ func TestDocsWithGlobalSecuritySchema(t *testing.T) {
 
 	doc := generateDocs(t, r)
 
-	require.Equal(t, openapi3.Components{
+	assert.Equal(t, openapi3.Components{
 		Extensions: map[string]interface{}{},
 		SecuritySchemes: openapi3.SecuritySchemes{"HTTPBearer": &openapi3.SecuritySchemeRef{Value: &openapi3.SecurityScheme{
 			Extensions:   map[string]interface{}{},
@@ -117,7 +117,7 @@ func TestDocsWithGlobalSecuritySchema(t *testing.T) {
 			BearerFormat: "JWT",
 		}}},
 	}, *doc.Components)
-	require.Equal(t, openapi3.SecurityRequirements{openapi3.SecurityRequirement{"HTTPBearer": []string{}}}, doc.Security)
+	assert.Equal(t, openapi3.SecurityRequirements{openapi3.SecurityRequirement{"HTTPBearer": []string{}}}, doc.Security)
 }
 
 func TestDocsWithEndpointSecuritySchema(t *testing.T) {
@@ -140,7 +140,7 @@ func TestDocsWithEndpointSecuritySchema(t *testing.T) {
 
 	doc := generateDocs(t, r)
 
-	require.Equal(t, openapi3.Components{
+	assert.Equal(t, openapi3.Components{
 		Extensions: map[string]interface{}{},
 		SecuritySchemes: openapi3.SecuritySchemes{"HTTPBearer": &openapi3.SecuritySchemeRef{Value: &openapi3.SecurityScheme{
 			Extensions:   map[string]interface{}{},
@@ -150,6 +150,6 @@ func TestDocsWithEndpointSecuritySchema(t *testing.T) {
 		}}},
 	}, *doc.Components)
 	assert.Nil(t, doc.Security)
-	require.Nil(t, doc.Paths["/my/example1"].Post.Security)
-	require.Equal(t, openapi3.SecurityRequirements{openapi3.SecurityRequirement{"HTTPBearer": []string{}}}, *doc.Paths["/my/example2"].Post.Security)
+	assert.Nil(t, doc.Paths["/my/example1"].Post.Security)
+	assert.Equal(t, openapi3.SecurityRequirements{openapi3.SecurityRequirement{"HTTPBearer": []string{}}}, *doc.Paths["/my/example2"].Post.Security)
 }

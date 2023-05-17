@@ -2,7 +2,13 @@
 
 ---
 
-## gNext v0.9.0 (09.05.2023) Latest
+## gNext v0.10.0 (17.05.2023) Latest
+
+* [NEW] Ability to define security schemas in docs
+
+---
+
+## gNext v0.9.0 (09.05.2023)
 
 * [EDIT] Do not generate endpoint tags if are overridden
 * [EDIT] Update openapi library
