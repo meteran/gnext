@@ -105,7 +105,11 @@ func (c *errorHandlerCaller) addSetter(setter argSetter) {
 }
 
 func (c *errorHandlerCaller) call(ctx *callContext) {
-	results := c.handler.Call([]reflect.Value{ctx.error.Elem()})
+	err := *ctx.error
+	if err.Type() == errorInterfaceType {
+		err = err.Elem()
+	}
+	results := c.handler.Call([]reflect.Value{err})
 	ctx.status = c.defaultStatus
 
 	for i, setter := range c.argSetters {

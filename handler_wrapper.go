@@ -356,7 +356,11 @@ func (w *HandlerWrapper) requestHandler(rawContext *gin.Context) {
 	for i := 0; i < len(w.handlersChain); {
 		w.handlersChain[i].call(context)
 		if context.error != nil {
-			errorHandlerCaller, exists := w.errorHandlerCallers[context.error.Elem().Type()]
+			errType := context.error.Type()
+			if errType == errorInterfaceType {
+				errType = context.error.Elem().Type()
+			}
+			errorHandlerCaller, exists := w.errorHandlerCallers[errType]
 			if !exists {
 				errorHandlerCaller = w.errorHandlerCallers[errorInterfaceType]
 			}
