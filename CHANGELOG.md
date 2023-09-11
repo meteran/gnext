@@ -2,7 +2,13 @@
 
 ---
 
-## gNext v0.10.0 (17.05.2023) Latest
+## gNext v0.10.1 (30.08.2023) Latest
+
+* [FIX] Fix reflect error on binding validation errors
+
+---
+
+## gNext v0.10.0 (17.05.2023)
 
 * [NEW] Ability to define security schemas in docs
 

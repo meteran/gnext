@@ -4,6 +4,8 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"net/http"
@@ -323,4 +325,29 @@ func TestRouteErrorsToSpecificHandlers(t *testing.T) {
 		assert.Equalf(t, c.status, response.Code, "case: %d, path: %s", idx, c.path)
 		assert.JSONEqf(t, c.response, response.Body.String(), "case: %d, path: %s", idx, c.path)
 	}
+}
+
+func TestOverrideValidationErrorHandler(t *testing.T) {
+	type request struct {
+		Id   int    `json:"id" binding:"required"`
+		Name string `json:"name"`
+	}
+
+	type response struct {
+		Result string `json:"result"`
+	}
+
+	handler := func(req *request) *response {
+		return &response{Result: req.Name}
+	}
+
+	r := Router()
+	r.OnError(func(validationErr validator.ValidationErrors) (*response, Status) {
+		return &response{Result: validationErr.Error()}, http.StatusUnprocessableEntity
+	})
+	r.POST("/handler", handler)
+
+	res := makeRequest(t, r, "POST", "/handler", gin.H{"name": "some name"})
+	assert.Equal(t, http.StatusUnprocessableEntity, res.Code)
+	assert.Equal(t, `{"result":"Key: 'request.id' Error:Field validation for 'id' failed on the 'required' tag"}`, res.Body.String())
 }
